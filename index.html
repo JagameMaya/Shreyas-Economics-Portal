@@ -80,7 +80,31 @@
 
                 <div>
                     <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Evidence-Based Rationale & Analysis</label>
-                    <textarea id="rationale" rows="5" required placeholder="Detail ONS figures, corporate debt spreads, geopolitical factors, or behavioral trends..." class="w-full rounded-lg border-slate-300 border p-2.5 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500"></textarea>
+                    <textarea id="rationale" rows="4" required placeholder="Detail ONS figures, corporate debt spreads, or forecasting logic..." class="w-full rounded-lg border-slate-300 border p-2.5 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+
+                <!-- Validation Section (For checking actual outcomes later) -->
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-3">
+                    <span class="text-xs font-bold uppercase text-slate-600 block">Post-Meeting Validation (Optional)</span>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-semibold uppercase text-slate-500 mb-1">Outcome Status</label>
+                            <select id="validationStatus" class="w-full rounded-lg border-slate-300 border p-2 text-xs bg-white">
+                                <option value="Pending">Pending / Unresolved</option>
+                                <option value="Correct">Correct Call</option>
+                                <option value="Incorrect">Incorrect Call (Learned)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold uppercase text-slate-500 mb-1">Actual BoE / Market Outcome</label>
+                            <input type="text" id="actualOutcome" placeholder="e.g., Kept at 5.0%" class="w-full rounded-lg border-slate-300 border p-2 text-xs bg-white">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold uppercase text-slate-500 mb-1">Why did we get it right/wrong? (Post-Mortem)</label>
+                        <textarea id="postMortem" rows="2" placeholder="Reflect on minutes, forecasting errors, or unexpected shocks..." class="w-full rounded-lg border-slate-300 border p-2 text-xs bg-white"></textarea>
+                    </div>
                 </div>
 
                 <div class="flex space-x-2">
@@ -94,22 +118,26 @@
             </form>
         </section>
 
-        <!-- Right Column: Timeline & Filters -->
+        <!-- Right Column: Timeline & Analytics -->
         <section class="lg:col-span-2 space-y-6">
             
             <!-- Stats Card -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                 <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
                     <span class="text-xs text-slate-500 font-semibold uppercase">Total Entries</span>
                     <p id="totalCount" class="text-2xl font-bold text-indigo-600 mt-1">0</p>
                 </div>
                 <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                    <span class="text-xs text-slate-500 font-semibold uppercase">Shreyas's Entries</span>
-                    <p id="shreyasCount" class="text-2xl font-bold text-slate-800 mt-1">0</p>
+                    <span class="text-xs text-slate-500 font-semibold uppercase">Shreyas's Accuracy</span>
+                    <p id="shreyasAcc" class="text-xl font-bold text-slate-800 mt-1">0%</p>
                 </div>
-                <div class="p-3 bg-slate-50 rounded-lg border border-slate-100 col-span-2 md:col-span-1">
-                    <span class="text-xs text-slate-500 font-semibold uppercase">Dad (AK)'s Entries</span>
-                    <p id="dadCount" class="text-2xl font-bold text-slate-800 mt-1">0</p>
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <span class="text-xs text-slate-500 font-semibold uppercase">Dad (AK)'s Accuracy</span>
+                    <p id="dadAcc" class="text-xl font-bold text-slate-800 mt-1">0%</p>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <span class="text-xs text-slate-500 font-semibold uppercase">Correct Calls</span>
+                    <p id="correctCount" class="text-2xl font-bold text-emerald-600 mt-1">0</p>
                 </div>
             </div>
 
@@ -164,8 +192,9 @@
             const timeline = document.getElementById('timelineContainer');
             const emptyState = document.getElementById('emptyState');
             const totalCount = document.getElementById('totalCount');
-            const shreyasCount = document.getElementById('shreyasCount');
-            const dadCount = document.getElementById('dadCount');
+            const shreyasAcc = document.getElementById('shreyasAcc');
+            const dadAcc = document.getElementById('dadAcc');
+            const correctCount = document.getElementById('correctCount');
             const filterForecaster = document.getElementById('filterForecaster');
             const filterCategory = document.getElementById('filterCategory');
             const editIndexInput = document.getElementById('editIndex');
@@ -218,6 +247,13 @@
 
             let entries = JSON.parse(localStorage.getItem('shreyas_lifelong_econ_entries')) || [];
 
+            function calculateAccuracy(forecasterName) {
+                const userEntries = entries.filter(e => e.forecaster === forecasterName && e.validationStatus !== 'Pending');
+                if (userEntries.length === 0) return 'N/A';
+                const correct = userEntries.filter(e => e.validationStatus === 'Correct').length;
+                return Math.round((correct / userEntries.length) * 100) + '%';
+            }
+
             function renderEntries() {
                 timeline.innerHTML = '';
                 const fForecaster = filterForecaster.value;
@@ -234,13 +270,15 @@
                     emptyState.style.display = 'block';
                 } else {
                     emptyState.style.display = 'none';
-                    // Sort descending by date
                     filtered.slice().sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(entry => {
-                        // Find original index in master entries array for editing/deleting
                         const originalIndex = entries.findIndex(item => item.id === entry.id);
 
+                        let badgeColor = 'bg-slate-100 text-slate-600';
+                        if (entry.validationStatus === 'Correct') badgeColor = 'bg-emerald-100 text-emerald-700';
+                        if (entry.validationStatus === 'Incorrect') badgeColor = 'bg-rose-100 text-rose-700';
+
                         const card = document.createElement('div');
-                        card.className = 'p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2 relative group';
+                        card.className = 'p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-3';
                         card.innerHTML = `
                             <div class="flex justify-between items-center text-xs">
                                 <span class="font-semibold px-2 py-0.5 rounded ${entry.forecaster === 'Shreyas Koppole' ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'}">${entry.forecaster}</span>
@@ -252,19 +290,30 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="flex items-center justify-between">
+                            <div class="flex items-center justify-between flex-wrap gap-2">
                                 <h3 class="font-bold text-slate-800 text-sm">${entry.prediction}</h3>
-                                <span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">${entry.category}</span>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs px-2 py-0.5 rounded-full font-medium ${badgeColor}">Status: ${entry.validationStatus || 'Pending'}</span>
+                                    <span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">${entry.category}</span>
+                                </div>
                             </div>
-                            <p class="text-slate-600 text-sm whitespace-pre-wrap mt-1">${entry.rationale}</p>
+                            <p class="text-slate-600 text-sm whitespace-pre-wrap">${entry.rationale}</p>
+                            
+                            ${entry.validationStatus && entry.validationStatus !== 'Pending' ? `
+                                <div class="mt-2 pt-2 border-t border-slate-200 text-xs bg-white p-2.5 rounded-lg space-y-1">
+                                    <p class="font-semibold text-slate-700">Actual Outcome: <span class="font-normal text-slate-600">${entry.actualOutcome || 'N/A'}</span></p>
+                                    <p class="font-semibold text-slate-700">Post-Mortem Analysis: <span class="font-normal text-slate-600">${entry.postMortem || 'N/A'}</span></p>
+                                </div>
+                            ` : ''}
                         `;
                         timeline.appendChild(card);
                     });
                 }
 
                 totalCount.textContent = entries.length;
-                shreyasCount.textContent = entries.filter(e => e.forecaster === 'Shreyas Koppole').length;
-                dadCount.textContent = entries.filter(e => e.forecaster === 'Dad (AK)').length;
+                shreyasAcc.textContent = calculateAccuracy('Shreyas Koppole');
+                dadAcc.textContent = calculateAccuracy('Dad (AK)');
+                correctCount.textContent = entries.filter(e => e.validationStatus === 'Correct').length;
             }
 
             form.addEventListener('submit', (e) => {
@@ -277,7 +326,10 @@
                     category: document.getElementById('category').value,
                     date: document.getElementById('entryDate').value,
                     prediction: document.getElementById('predictionCall').value,
-                    rationale: document.getElementById('rationale').value
+                    rationale: document.getElementById('rationale').value,
+                    validationStatus: document.getElementById('validationStatus').value,
+                    actualOutcome: document.getElementById('actualOutcome').value,
+                    postMortem: document.getElementById('postMortem').value
                 };
 
                 if (editIdx > -1) {
@@ -314,6 +366,9 @@
                 updateCallDropdown(entry.prediction);
                 document.getElementById('entryDate').value = entry.date;
                 document.getElementById('rationale').value = entry.rationale;
+                document.getElementById('validationStatus').value = entry.validationStatus || 'Pending';
+                document.getElementById('actualOutcome').value = entry.actualOutcome || '';
+                document.getElementById('postMortem').value = entry.postMortem || '';
                 editIndexInput.value = index;
 
                 formTitle.innerHTML = `<svg class="w-5 h-5 mr-2 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg> Edit Entry #${index + 1}`;
