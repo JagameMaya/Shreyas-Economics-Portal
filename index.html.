@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreyas Koppole's Economics & Finance Research Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-slate-900 text-white shadow-md">
+        <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center">
+            <div>
+                <span class="bg-indigo-600 text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider">Lifelong Economic Journal</span>
+                <h1 class="text-2xl md:text-3xl font-bold mt-1">Shreyas Koppole's Economics & Finance Portal</h1>
+                <p class="text-slate-400 text-sm mt-1">An open-ended, evidence-based research platform tracking macroeconomic trends across a lifetime.</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex items-center space-x-3 bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
+                <span class="text-xs text-slate-400">Forecasters:</span>
+                <span class="font-semibold text-indigo-400 text-sm">Shreyas & Dad (AK)</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 py-8 flex-grow w-full grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <!-- Left Column: Add Entry Form -->
+        <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 lg:col-span-1">
+            <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                Log New Entry / Prediction
+            </h2>
+            <form id="entryForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Forecaster</label>
+                    <select id="forecaster" class="w-full rounded-lg border-slate-300 border p-2.5 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500">
+                        <option value="Shreyas Koppole">Shreyas Koppole</option>
+                        <option value="Dad (AK)">Dad (AK)</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Life Stage / Phase</label>
+                        <select id="lifeStage" class="w-full rounded-lg border-slate-300 border p-2.5 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500">
+                            <option value="GCSEs (Year 10-11)">GCSEs (Yr 10-11)</option>
+                            <option value="6th Form (Year 12-13)">6th Form (Yr 12-13)</option>
+                            <option value="University / Beyond">University & Beyond</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Topic</label>
+                        <select id="category" class="w-full rounded-lg border-slate-300 border p-2.5 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500">
+                            <option value="Monetary Policy">Monetary Policy</option>
+                            <option value="Housing & Labor">Housing & Labor</option>
+                            <option value="Behavioral Finance">Behavioral Finance</option>
+                            <option value="Global Markets">Global Markets</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Date</label>
+                    <input type="date" id="entryDate" required class="w-full rounded-lg border-slate-300 border p-2.5 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Call / Thesis</label>
+                    <select id="predictionCall" class="w-full rounded-lg border-slate-300 border p-2.5 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500">
+                        <option value="Rate Cut / Dovish">Rate Cut / Dovish</option>
+                        <option value="Rate Hold / Neutral">Rate Hold / Neutral</option>
+                        <option value="Rate Hike / Hawkish">Rate Hike / Hawkish</option>
+                        <option value="Deep-Dive Essay / Note">Deep-Dive Essay / Note</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Evidence-Based Rationale & Data</label>
+                    <textarea id="rationale" rows="4" required placeholder="Detail inflation data, econometric models, or core insights..." class="w-full rounded-lg border-slate-300 border p-2.5 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-sm">
+                    Commit Entry to Lifetime Journal
+                </button>
+            </form>
+        </section>
+
+        <!-- Right Column: Timeline & Leaderboard -->
+        <section class="lg:col-span-2 space-y-6">
+            
+            <!-- Stats Card -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <span class="text-xs text-slate-500 font-semibold uppercase">Total Entries</span>
+                    <p id="totalCount" class="text-2xl font-bold text-indigo-600 mt-1">0</p>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <span class="text-xs text-slate-500 font-semibold uppercase">Shreyas's Entries</span>
+                    <p id="shreyasCount" class="text-2xl font-bold text-slate-800 mt-1">0</p>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-100 col-span-2 md:col-span-1">
+                    <span class="text-xs text-slate-500 font-semibold uppercase">Dad (AK)'s Entries</span>
+                    <p id="dadCount" class="text-2xl font-bold text-slate-800 mt-1">0</p>
+                </div>
+            </div>
+
+            <!-- Timeline Feed -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b border-slate-100 gap-4">
+                    <h2 class="text-lg font-bold text-slate-900">Lifelong Research & Prediction Timeline</h2>
+                    <div class="flex items-center space-x-2 w-full sm:w-auto">
+                        <label class="text-xs font-semibold text-slate-500">Filter Phase:</label>
+                        <select id="filterStage" class="rounded-lg border-slate-300 border p-1.5 text-xs bg-slate-50">
+                            <option value="All">All Phases</option>
+                            <option value="GCSEs (Year 10-11)">GCSEs</option>
+                            <option value="6th Form (Year 12-13)">6th Form</option>
+                            <option value="University / Beyond">University & Beyond</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="timelineContainer" class="space-y-6">
+                    <div id="emptyState" class="text-center py-12 text-slate-400 text-sm">
+                        No entries logged yet. Add your first prediction or note to start your lifelong journal!
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
+        Shreyas & Dad (AK) • Lifelong Economics & Finance Research Journal
+    </footer>
+
+    <!-- Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('entryForm');
+            const timeline = document.getElementById('timelineContainer');
+            const emptyState = document.getElementById('emptyState');
+            const totalCount = document.getElementById('totalCount');
+            const shreyasCount = document.getElementById('shreyasCount');
+            const dadCount = document.getElementById('dadCount');
+            const filterStage = document.getElementById('filterStage');
+
+            let entries = JSON.parse(localStorage.getItem('shreyas_lifelong_econ_entries')) || [];
+
+            function renderEntries() {
+                timeline.innerHTML = '';
+                const selectedFilter = filterStage.value;
+                const filtered = selectedFilter === 'All' ? entries : entries.get(e => e.lifeStage === selectedFilter) || entries.filter(e => e.lifeStage === selectedFilter);
+
+                if (filtered.length === 0) {
+                    timeline.appendChild(emptyState);
+                    emptyState.style.display = 'block';
+                } else {
+                    emptyState.style.display = 'none';
+                    filtered.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(entry => {
+                        const card = document.createElement('div');
+                        card.className = 'p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2';
+                        card.innerHTML = `
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="font-semibold px-2 py-0.5 rounded ${entry.forecaster === 'Shreyas Koppole' ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'}">${entry.forecaster}</span>
+                                <span class="text-slate-500">${entry.date}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-bold text-slate-800 text-sm">${entry.prediction}</h3>
+                                <div class="space-x-1">
+                                    <span class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">${entry.lifeStage}</span>
+                                    <span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">${entry.category}</span>
+                                </div>
+                            </div>
+                            <p class="text-slate-600 text-sm whitespace-pre-wrap mt-1">${entry.rationale}</p>
+                        `;
+                        timeline.appendChild(card);
+                    });
+                }
+
+                totalCount.textContent = entries.length;
+                shreyasCount.textContent = entries.filter(e => e.forecaster === 'Shreyas Koppole').length;
+                dadCount.textContent = entries.filter(e => e.forecaster === 'Dad (AK)').length;
+            }
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newEntry = {
+                    id: Date.now(),
+                    forecaster: document.getElementById('forecaster').value,
+                    lifeStage: document.getElementById('lifeStage').value,
+                    category: document.getElementById('category').value,
+                    date: document.getElementById('entryDate').value,
+                    prediction: document.getElementById('predictionCall').value,
+                    rationale: document.getElementById('rationale').value
+                };
+                entries.push(newEntry);
+                localStorage.setItem('shreyas_lifelong_econ_entries', JSON.stringify(entries));
+                form.reset();
+                renderEntries();
+            });
+
+            filterStage.addEventListener('change', renderEntries);
+            renderEntries();
+        });
+    </script>
+</body>
+</html>
