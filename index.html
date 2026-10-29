@@ -30,13 +30,14 @@
     <!-- Main Content -->
     <main class="max-w-6xl mx-auto px-4 py-8 flex-grow w-full grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-        <!-- Left Column: Add Entry Form -->
+        <!-- Left Column: Add / Edit Entry Form -->
         <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 lg:col-span-1">
-            <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center">
+            <h2 id="formTitle" class="text-lg font-bold text-slate-900 mb-4 flex items-center">
                 <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                Log New Entry / Prediction
+                Log New Entry / Research Note
             </h2>
             <form id="entryForm" class="space-y-4">
+                <input type="hidden" id="editIndex" value="-1">
                 <div>
                     <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Forecaster</label>
                     <select id="forecaster" class="w-full rounded-lg border-slate-300 border p-2.5 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500">
@@ -71,27 +72,29 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Call / Thesis</label>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Call / Thesis Type</label>
                     <select id="predictionCall" class="w-full rounded-lg border-slate-300 border p-2.5 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500">
-                        <option value="Rate Cut / Dovish">Rate Cut / Dovish</option>
-                        <option value="Rate Hold / Neutral">Rate Hold / Neutral</option>
-                        <option value="Rate Hike / Hawkish">Rate Hike / Hawkish</option>
-                        <option value="Deep-Dive Essay / Note">Deep-Dive Essay / Note</option>
+                        <!-- Dynamically populated -->
                     </select>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Evidence-Based Rationale & Data</label>
-                    <textarea id="rationale" rows="4" required placeholder="Detail inflation data, econometric models, or core insights..." class="w-full rounded-lg border-slate-300 border p-2.5 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500"></textarea>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Evidence-Based Rationale & Analysis</label>
+                    <textarea id="rationale" rows="5" required placeholder="Detail ONS figures, corporate debt spreads, geopolitical factors, or behavioral trends..." class="w-full rounded-lg border-slate-300 border p-2.5 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500"></textarea>
                 </div>
 
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-sm">
-                    Commit Entry to Lifetime Journal
-                </button>
+                <div class="flex space-x-2">
+                    <button type="submit" id="submitBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-sm">
+                        Commit Entry to Journal
+                    </button>
+                    <button type="button" id="cancelEditBtn" class="hidden bg-slate-300 hover:bg-slate-400 text-slate-700 font-semibold py-2.5 px-4 rounded-lg text-sm transition">
+                        Cancel
+                    </button>
+                </div>
             </form>
         </section>
 
-        <!-- Right Column: Timeline & Leaderboard -->
+        <!-- Right Column: Timeline & Filters -->
         <section class="lg:col-span-2 space-y-6">
             
             <!-- Stats Card -->
@@ -110,24 +113,35 @@
                 </div>
             </div>
 
-            <!-- Timeline Feed -->
+            <!-- Timeline Feed & Filters -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b border-slate-100 gap-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-slate-100 gap-4">
                     <h2 class="text-lg font-bold text-slate-900">Lifelong Research & Prediction Timeline</h2>
-                    <div class="flex items-center space-x-2 w-full sm:w-auto">
-                        <label class="text-xs font-semibold text-slate-500">Filter Phase:</label>
-                        <select id="filterStage" class="rounded-lg border-slate-300 border p-1.5 text-xs bg-slate-50">
-                            <option value="All">All Phases</option>
-                            <option value="GCSEs (Year 10-11)">GCSEs</option>
-                            <option value="6th Form (Year 12-13)">6th Form</option>
-                            <option value="University / Beyond">University & Beyond</option>
-                        </select>
+                    
+                    <!-- Filters Toolbar -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <div>
+                            <select id="filterForecaster" class="rounded-lg border-slate-300 border p-1.5 text-xs bg-slate-50">
+                                <option value="All">All Forecasters</option>
+                                <option value="Shreyas Koppole">Shreyas Koppole</option>
+                                <option value="Dad (AK)">Dad (AK)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <select id="filterCategory" class="rounded-lg border-slate-300 border p-1.5 text-xs bg-slate-50">
+                                <option value="All">All Topics</option>
+                                <option value="Monetary Policy">Monetary Policy</option>
+                                <option value="Housing & Labor">Housing & Labor</option>
+                                <option value="Behavioral Finance">Behavioral Finance</option>
+                                <option value="Global Markets">Global Markets</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
                 <div id="timelineContainer" class="space-y-6">
                     <div id="emptyState" class="text-center py-12 text-slate-400 text-sm">
-                        No entries logged yet. Add your first prediction or note to start your lifelong journal!
+                        No entries logged yet. Add your first prediction or global markets note above!
                     </div>
                 </div>
             </div>
@@ -144,40 +158,103 @@
     <!-- Script -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const categorySelect = document.getElementById('category');
+            const predictionCallSelect = document.getElementById('predictionCall');
             const form = document.getElementById('entryForm');
             const timeline = document.getElementById('timelineContainer');
             const emptyState = document.getElementById('emptyState');
             const totalCount = document.getElementById('totalCount');
             const shreyasCount = document.getElementById('shreyasCount');
             const dadCount = document.getElementById('dadCount');
-            const filterStage = document.getElementById('filterStage');
+            const filterForecaster = document.getElementById('filterForecaster');
+            const filterCategory = document.getElementById('filterCategory');
+            const editIndexInput = document.getElementById('editIndex');
+            const formTitle = document.getElementById('formTitle');
+            const submitBtn = document.getElementById('submitBtn');
+            const cancelEditBtn = document.getElementById('cancelEditBtn');
+
+            const callOptions = {
+                "Monetary Policy": [
+                    "Rate Cut / Dovish",
+                    "Rate Hold / Neutral",
+                    "Rate Hike / Hawkish",
+                    "Policy Critique / Error Analysis"
+                ],
+                "Housing & Labor": [
+                    "House Price Growth (Bullish)",
+                    "House Price Correction (Bearish)",
+                    "Rental Market Pressure",
+                    "Wage-Inflation Spiral Note"
+                ],
+                "Behavioral Finance": [
+                    "Irrational Exuberance / Bubble",
+                    "Panic Selling / Liquidity Crunch",
+                    "Sentiment & Narrative Shift",
+                    "Cognitive Bias Analysis"
+                ],
+                "Global Markets": [
+                    "Geopolitical Shock / Risk-Off",
+                    "Macro Trend / Liquidity Shift",
+                    "Sector Rotation Note",
+                    "Credit Spread / Debt Analysis"
+                ]
+            };
+
+            function updateCallDropdown(selectedVal = null) {
+                const selectedCategory = categorySelect.value;
+                const options = callOptions[selectedCategory] || [];
+                predictionCallSelect.innerHTML = '';
+                options.forEach(opt => {
+                    const el = document.createElement('option');
+                    el.value = opt;
+                    el.textContent = opt;
+                    if (selectedVal && opt === selectedVal) el.selected = true;
+                    predictionCallSelect.appendChild(el);
+                });
+            }
+
+            categorySelect.addEventListener('change', () => updateCallDropdown());
+            updateCallDropdown();
 
             let entries = JSON.parse(localStorage.getItem('shreyas_lifelong_econ_entries')) || [];
 
             function renderEntries() {
                 timeline.innerHTML = '';
-                const selectedFilter = filterStage.value;
-                const filtered = selectedFilter === 'All' ? entries : entries.get(e => e.lifeStage === selectedFilter) || entries.filter(e => e.lifeStage === selectedFilter);
+                const fForecaster = filterForecaster.value;
+                const fCategory = filterCategory.value;
+
+                let filtered = entries.filter(e => {
+                    let matchForecaster = (fForecaster === 'All' || e.forecaster === fForecaster);
+                    let matchCategory = (fCategory === 'All' || e.category === fCategory);
+                    return matchForecaster && matchCategory;
+                });
 
                 if (filtered.length === 0) {
                     timeline.appendChild(emptyState);
                     emptyState.style.display = 'block';
                 } else {
                     emptyState.style.display = 'none';
-                    filtered.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(entry => {
+                    // Sort descending by date
+                    filtered.slice().sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(entry => {
+                        // Find original index in master entries array for editing/deleting
+                        const originalIndex = entries.findIndex(item => item.id === entry.id);
+
                         const card = document.createElement('div');
-                        card.className = 'p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2';
+                        card.className = 'p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2 relative group';
                         card.innerHTML = `
                             <div class="flex justify-between items-center text-xs">
                                 <span class="font-semibold px-2 py-0.5 rounded ${entry.forecaster === 'Shreyas Koppole' ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'}">${entry.forecaster}</span>
-                                <span class="text-slate-500">${entry.date}</span>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-slate-500">${entry.date} (${entry.lifeStage})</span>
+                                    <div class="space-x-1">
+                                        <button onclick="window.editEntry(${originalIndex})" class="text-indigo-600 hover:text-indigo-800 font-semibold text-xs px-1">Edit</button>
+                                        <button onclick="window.deleteEntry(${originalIndex})" class="text-red-500 hover:text-red-700 font-semibold text-xs px-1">Delete</button>
+                                    </div>
+                                </div>
                             </div>
                             <div class="flex items-center justify-between">
                                 <h3 class="font-bold text-slate-800 text-sm">${entry.prediction}</h3>
-                                <div class="space-x-1">
-                                    <span class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">${entry.lifeStage}</span>
-                                    <span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">${entry.category}</span>
-                                </div>
+                                <span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">${entry.category}</span>
                             </div>
                             <p class="text-slate-600 text-sm whitespace-pre-wrap mt-1">${entry.rationale}</p>
                         `;
@@ -192,8 +269,9 @@
 
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const newEntry = {
-                    id: Date.now(),
+                const editIdx = parseInt(editIndexInput.value);
+                const entryData = {
+                    id: editIdx > -1 ? entries[editIdx].id : Date.now(),
                     forecaster: document.getElementById('forecaster').value,
                     lifeStage: document.getElementById('lifeStage').value,
                     category: document.getElementById('category').value,
@@ -201,13 +279,60 @@
                     prediction: document.getElementById('predictionCall').value,
                     rationale: document.getElementById('rationale').value
                 };
-                entries.push(newEntry);
+
+                if (editIdx > -1) {
+                    entries[editIdx] = entryData;
+                    resetForm();
+                } else {
+                    entries.push(entryData);
+                }
+
                 localStorage.setItem('shreyas_lifelong_econ_entries', JSON.stringify(entries));
                 form.reset();
+                updateCallDropdown();
                 renderEntries();
             });
 
-            filterStage.addEventListener('change', renderEntries);
+            function resetForm() {
+                editIndexInput.value = -1;
+                formTitle.innerHTML = `<svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg> Log New Entry / Research Note`;
+                submitBtn.textContent = "Commit Entry to Journal";
+                cancelEditBtn.classList.add('hidden');
+            }
+
+            cancelEditBtn.addEventListener('click', () => {
+                form.reset();
+                updateCallDropdown();
+                resetForm();
+            });
+
+            window.editEntry = function(index) {
+                const entry = entries[index];
+                document.getElementById('forecaster').value = entry.forecaster;
+                document.getElementById('lifeStage').value = entry.lifeStage;
+                document.getElementById('category').value = entry.category;
+                updateCallDropdown(entry.prediction);
+                document.getElementById('entryDate').value = entry.date;
+                document.getElementById('rationale').value = entry.rationale;
+                editIndexInput.value = index;
+
+                formTitle.innerHTML = `<svg class="w-5 h-5 mr-2 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg> Edit Entry #${index + 1}`;
+                submitBtn.textContent = "Update Entry";
+                cancelEditBtn.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            window.deleteEntry = function(index) {
+                if (confirm("Are you sure you want to delete this research entry?")) {
+                    entries.splice(index, 1);
+                    localStorage.setItem('shreyas_lifelong_econ_entries', JSON.stringify(entries));
+                    resetForm();
+                    renderEntries();
+                }
+            };
+
+            filterForecaster.addEventListener('change', renderEntries);
+            filterCategory.addEventListener('change', renderEntries);
             renderEntries();
         });
     </script>
