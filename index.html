@@ -20,9 +20,16 @@
                 <h1 class="text-2xl md:text-3xl font-bold mt-1">Shreyas Koppole's Economics & Finance Portal</h1>
                 <p class="text-slate-400 text-sm mt-1">An open-ended, evidence-based research platform tracking macroeconomic trends across a lifetime.</p>
             </div>
-            <div class="mt-4 md:mt-0 flex items-center space-x-3 bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
-                <span class="text-xs text-slate-400">Forecasters:</span>
-                <span class="font-semibold text-indigo-400 text-sm">Shreyas & Dad (AK)</span>
+            <div class="mt-4 md:mt-0 flex flex-col items-end gap-2">
+                <div class="flex items-center space-x-3 bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
+                    <span class="text-xs text-slate-400">Forecasters:</span>
+                    <span class="font-semibold text-indigo-400 text-sm">Shreyas & Dad (AK)</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs">
+                    <span id="modeBadge" class="px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">Loading…</span>
+                    <span id="authStatus" class="text-slate-400"></span>
+                    <button id="authBtn" type="button" class="hidden bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded-lg font-semibold">Sign in</button>
+                </div>
             </div>
         </div>
     </header>
@@ -36,6 +43,10 @@
                 <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                 Log New Entry / Research Note
             </h2>
+            <div id="formNotice" class="hidden mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs space-y-2">
+                <p id="formNoticeText"></p>
+                <button id="importBtn" type="button" class="hidden bg-amber-600 hover:bg-amber-700 text-white font-semibold px-3 py-1.5 rounded-lg">Import entries saved on this device</button>
+            </div>
             <form id="entryForm" class="space-y-4">
                 <input type="hidden" id="editIndex" value="-1">
                 <div>
@@ -167,6 +178,7 @@
                     </div>
                 </div>
 
+                <div id="errorBanner" class="hidden mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs"></div>
                 <div id="timelineContainer" class="space-y-6">
                     <div id="emptyState" class="text-center py-12 text-slate-400 text-sm">
                         No entries logged yet. Add your first prediction or global markets note above!
@@ -183,4 +195,346 @@
         Shreyas & Dad (AK) • Lifelong Economics & Finance Research Journal
     </footer>
 
+
     <!-- Script -->
+    <script type="module">
+        // ====== Firebase project config ======
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyCQmEM6M32uZwlR82W0Jdqmly2mvKqLhwk",
+            authDomain: "shreyas-econ-portal.firebaseapp.com",
+            projectId: "shreyas-econ-portal",
+            storageBucket: "shreyas-econ-portal.firebasestorage.app",
+            messagingSenderId: "618142009302",
+            appId: "1:618142009302:web:174a04987083b591cc4677"
+        };
+        const ALLOWED_EMAILS = [];
+        // ============================================================================
+
+        const LOCAL_KEY = 'shreyas_lifelong_econ_entries';
+        const FB_VERSION = '10.12.2';
+        const CLOUD_CONFIGURED = !String(FIREBASE_CONFIG.projectId).startsWith('PASTE');
+
+        const $ = (id) => document.getElementById(id);
+        const categorySelect = $('category');
+        const predictionCallSelect = $('predictionCall');
+        const form = $('entryForm');
+        const timeline = $('timelineContainer');
+        const emptyState = $('emptyState');
+        const filterForecaster = $('filterForecaster');
+        const filterCategory = $('filterCategory');
+        const editIndexInput = $('editIndex');
+        const formTitle = $('formTitle');
+        const submitBtn = $('submitBtn');
+        const cancelEditBtn = $('cancelEditBtn');
+        const errorBanner = $('errorBanner');
+
+        const callOptions = {
+            "Monetary Policy": ["Rate Cut / Dovish", "Rate Hold / Neutral", "Rate Hike / Hawkish", "Policy Critique / Error Analysis"],
+            "Housing & Labor": ["House Price Growth (Bullish)", "House Price Correction (Bearish)", "Rental Market Pressure", "Wage-Inflation Spiral Note"],
+            "Behavioral Finance": ["Irrational Exuberance / Bubble", "Panic Selling / Liquidity Crunch", "Sentiment & Narrative Shift", "Cognitive Bias Analysis"],
+            "Global Markets": ["Geopolitical Shock / Risk-Off", "Macro Trend / Liquidity Shift", "Sector Rotation Note", "Credit Spread / Debt Analysis"]
+        };
+
+        const pencilIcon = (color) => `<svg class="w-5 h-5 mr-2 ${color}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>`;
+
+        const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const fmtDateTime = (ms) => new Date(ms).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const todayISO = () => new Date().toISOString().slice(0, 10);
+
+        function readLocal() {
+            try { return JSON.parse(localStorage.getItem(LOCAL_KEY)) || []; } catch (e) { return []; }
+        }
+
+        function createLocalStore() {
+            let entries = readLocal().map((e) => ({ ...e, id: String(e.id), createdAtMs: e.createdAtMs || Number(e.id) || 0, updatedAtMs: e.updatedAtMs || Number(e.id) || 0 }));
+            let listener = () => {};
+            const save = () => {
+                try { localStorage.setItem(LOCAL_KEY, JSON.stringify(entries)); } catch (e) { showError('Could not save to this browser (storage blocked).'); }
+                listener(entries.slice());
+            };
+            return {
+                mode: 'local',
+                subscribe(cb) { listener = cb; cb(entries.slice()); },
+                async add(d) { const now = Date.now(); entries.push({ ...d, id: String(now), createdAtMs: now, updatedAtMs: now }); save(); },
+                async update(id, d) { entries = entries.map((e) => (e.id === id ? { ...e, ...d, updatedAtMs: Date.now() } : e)); save(); },
+                async remove(id) { entries = entries.filter((e) => e.id !== id); save(); }
+            };
+        }
+
+        async function createCloudStore() {
+            const base = `https://www.gstatic.com/firebasejs/${FB_VERSION}`;
+            const [appMod, authMod, fsMod] = await Promise.all([
+                import(`${base}/firebase-app.js`),
+                import(`${base}/firebase-auth.js`),
+                import(`${base}/firebase-firestore.js`)
+            ]);
+            const app = appMod.initializeApp(FIREBASE_CONFIG);
+            const auth = authMod.getAuth(app);
+            const db = fsMod.getFirestore(app);
+            const col = fsMod.collection(db, 'entries');
+            const ms = (t) => (t && t.toMillis ? t.toMillis() : Date.now());
+            return {
+                mode: 'cloud',
+                onAuth(cb) { authMod.onAuthStateChanged(auth, cb); },
+                signIn() { return authMod.signInWithPopup(auth, new authMod.GoogleAuthProvider()); },
+                signOut() { return authMod.signOut(auth); },
+                subscribe(cb, onError) {
+                    fsMod.onSnapshot(fsMod.query(col), (snap) => {
+                        cb(snap.docs.map((d) => { const x = d.data(); return { ...x, id: d.id, createdAtMs: ms(x.createdAt), updatedAtMs: ms(x.updatedAt) }; }));
+                    }, onError);
+                },
+                add(d) { return fsMod.addDoc(col, { ...d, createdAt: fsMod.serverTimestamp(), updatedAt: fsMod.serverTimestamp() }); },
+                update(id, d) { return fsMod.updateDoc(fsMod.doc(db, 'entries', id), { ...d, updatedAt: fsMod.serverTimestamp() }); },
+                remove(id) { return fsMod.deleteDoc(fsMod.doc(db, 'entries', id)); }
+            };
+        }
+
+        let store = null;
+        let entries = [];
+        let currentUser = null;
+
+        const canEdit = () => {
+            if (!store) return false;
+            if (store.mode === 'local') return true;
+            if (!currentUser) return false;
+            return ALLOWED_EMAILS.length === 0 || ALLOWED_EMAILS.includes((currentUser.email || '').toLowerCase());
+        };
+
+        function showError(msg) {
+            errorBanner.textContent = msg;
+            errorBanner.classList.remove('hidden');
+        }
+        function clearError() { errorBanner.classList.add('hidden'); }
+
+        function updateCallDropdown(selectedVal = null) {
+            const options = callOptions[categorySelect.value] || [];
+            predictionCallSelect.innerHTML = '';
+            options.forEach((opt) => {
+                const el = document.createElement('option');
+                el.value = opt;
+                el.textContent = opt;
+                if (selectedVal && opt === selectedVal) el.selected = true;
+                predictionCallSelect.appendChild(el);
+            });
+        }
+
+        function resetForm() {
+            form.reset();
+            editIndexInput.value = '-1';
+            updateCallDropdown();
+            $('entryDate').value = todayISO();
+            formTitle.innerHTML = `${pencilIcon('text-indigo-600')} Log New Entry / Research Note`;
+            submitBtn.textContent = 'Commit Entry to Journal';
+            cancelEditBtn.classList.add('hidden');
+        }
+
+        function applyPermissions() {
+            const allowed = canEdit();
+            [...form.elements].forEach((el) => { el.disabled = !allowed; });
+            const notice = $('formNotice');
+            const text = $('formNoticeText');
+            const importBtn = $('importBtn');
+            importBtn.classList.add('hidden');
+            if (!store) {
+                notice.classList.add('hidden');
+            } else if (store.mode === 'local') {
+                notice.classList.remove('hidden');
+                text.textContent = 'Local mode: entries are saved only in this browser and are not visible to anyone else.';
+            } else if (!currentUser) {
+                notice.classList.remove('hidden');
+                text.textContent = 'Anyone can read this journal. Sign in with an authorised Google account to add or edit entries.';
+            } else if (!allowed) {
+                notice.classList.remove('hidden');
+                text.textContent = `${currentUser.email} is not an authorised account for this journal.`;
+            } else {
+                const leftovers = readLocal();
+                if (leftovers.length) {
+                    notice.classList.remove('hidden');
+                    text.textContent = `${leftovers.length} entry/entries were saved on this device earlier.`;
+                    importBtn.classList.remove('hidden');
+                } else {
+                    notice.classList.add('hidden');
+                }
+            }
+            $('modeBadge').textContent = !store ? 'Unavailable' : store.mode === 'cloud' ? 'Cloud-synced' : 'Local only';
+            $('modeBadge').className = 'px-2 py-0.5 rounded-full ' + (store && store.mode === 'cloud' ? 'bg-emerald-700 text-emerald-100' : 'bg-slate-700 text-slate-300');
+            const authBtn = $('authBtn');
+            if (store && store.mode === 'cloud') {
+                authBtn.classList.remove('hidden');
+                authBtn.textContent = currentUser ? 'Sign out' : 'Sign in with Google';
+                $('authStatus').textContent = currentUser ? currentUser.email : '';
+            } else {
+                authBtn.classList.add('hidden');
+                $('authStatus').textContent = '';
+            }
+        }
+
+        function calculateAccuracy(name) {
+            const resolved = entries.filter((e) => e.forecaster === name && e.validationStatus && e.validationStatus !== 'Pending');
+            if (resolved.length === 0) return 'N/A';
+            const correct = resolved.filter((e) => e.validationStatus === 'Correct').length;
+            return Math.round((correct / resolved.length) * 100) + '%';
+        }
+
+        function renderEntries() {
+            timeline.innerHTML = '';
+            const fForecaster = filterForecaster.value;
+            const fCategory = filterCategory.value;
+            const filtered = entries.filter((e) => (fForecaster === 'All' || e.forecaster === fForecaster) && (fCategory === 'All' || e.category === fCategory));
+
+            if (filtered.length === 0) {
+                timeline.appendChild(emptyState);
+                emptyState.style.display = 'block';
+            } else {
+                emptyState.style.display = 'none';
+                const allowed = canEdit();
+                filtered.slice().sort((a, b) => (new Date(b.date) - new Date(a.date)) || (b.createdAtMs - a.createdAtMs)).forEach((entry) => {
+                    let badgeColor = 'bg-slate-100 text-slate-600';
+                    if (entry.validationStatus === 'Correct') badgeColor = 'bg-emerald-100 text-emerald-700';
+                    if (entry.validationStatus === 'Incorrect') badgeColor = 'bg-rose-100 text-rose-700';
+                    const edited = entry.updatedAtMs - entry.createdAtMs > 60000;
+                    const loggedLabel = store.mode === 'cloud' ? 'Logged' : 'Saved on this device';
+
+                    const card = document.createElement('div');
+                    card.className = 'p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-3';
+                    card.innerHTML = `
+                        <div class="flex justify-between items-center text-xs flex-wrap gap-2">
+                            <span class="font-semibold px-2 py-0.5 rounded ${entry.forecaster === 'Shreyas Koppole' ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'}">${esc(entry.forecaster)}</span>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-slate-500">${esc(entry.date)} (${esc(entry.lifeStage)})</span>
+                                ${allowed ? `<div class="space-x-1">
+                                    <button data-act="edit" data-id="${esc(entry.id)}" class="text-indigo-600 hover:text-indigo-800 font-semibold text-xs px-1">Edit</button>
+                                    <button data-act="delete" data-id="${esc(entry.id)}" class="text-red-500 hover:text-red-700 font-semibold text-xs px-1">Delete</button>
+                                </div>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between flex-wrap gap-2">
+                            <h3 class="font-bold text-slate-800 text-sm">${esc(entry.prediction)}</h3>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs px-2 py-0.5 rounded-full font-medium ${badgeColor}">Status: ${esc(entry.validationStatus || 'Pending')}</span>
+                                <span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">${esc(entry.category)}</span>
+                            </div>
+                        </div>
+                        <p class="text-slate-600 text-sm whitespace-pre-wrap">${esc(entry.rationale)}</p>
+                        ${entry.validationStatus && entry.validationStatus !== 'Pending' ? `
+                            <div class="mt-2 pt-2 border-t border-slate-200 text-xs bg-white p-2.5 rounded-lg space-y-1">
+                                <p class="font-semibold text-slate-700">Actual Outcome: <span class="font-normal text-slate-600">${esc(entry.actualOutcome || 'N/A')}</span></p>
+                                <p class="font-semibold text-slate-700">Post-Mortem Analysis: <span class="font-normal text-slate-600 whitespace-pre-wrap">${esc(entry.postMortem || 'N/A')}</span></p>
+                            </div>` : ''}
+                        <p class="text-[11px] text-slate-400">${loggedLabel} ${fmtDateTime(entry.createdAtMs)}${edited ? ` · last edited ${fmtDateTime(entry.updatedAtMs)}` : ''}</p>
+                    `;
+                    timeline.appendChild(card);
+                });
+            }
+
+            $('totalCount').textContent = entries.length;
+            $('shreyasAcc').textContent = calculateAccuracy('Shreyas Koppole');
+            $('dadAcc').textContent = calculateAccuracy('Dad (AK)');
+            $('correctCount').textContent = entries.filter((e) => e.validationStatus === 'Correct').length;
+        }
+
+        categorySelect.addEventListener('change', () => updateCallDropdown());
+        filterForecaster.addEventListener('change', renderEntries);
+        filterCategory.addEventListener('change', renderEntries);
+        cancelEditBtn.addEventListener('click', resetForm);
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!canEdit()) return;
+            clearError();
+            const data = {
+                forecaster: $('forecaster').value,
+                lifeStage: $('lifeStage').value,
+                category: categorySelect.value,
+                date: $('entryDate').value,
+                prediction: predictionCallSelect.value,
+                rationale: $('rationale').value,
+                validationStatus: $('validationStatus').value,
+                actualOutcome: $('actualOutcome').value,
+                postMortem: $('postMortem').value
+            };
+            submitBtn.disabled = true;
+            try {
+                const editId = editIndexInput.value;
+                if (editId !== '-1') await store.update(editId, data); else await store.add(data);
+                resetForm();
+            } catch (err) {
+                console.error(err);
+                showError('Could not save: ' + (err.code === 'permission-denied' ? 'this account is not allowed to write to the journal.' : err.message));
+            } finally {
+                submitBtn.disabled = !canEdit();
+            }
+        });
+
+        timeline.addEventListener('click', async (e) => {
+            const btn = e.target.closest('button[data-act]');
+            if (!btn || !canEdit()) return;
+            const id = btn.dataset.id;
+            const entry = entries.find((x) => x.id === id);
+            if (!entry) return;
+            if (btn.dataset.act === 'edit') {
+                $('forecaster').value = entry.forecaster;
+                $('lifeStage').value = entry.lifeStage;
+                categorySelect.value = entry.category;
+                updateCallDropdown(entry.prediction);
+                $('entryDate').value = entry.date;
+                $('rationale').value = entry.rationale;
+                $('validationStatus').value = entry.validationStatus || 'Pending';
+                $('actualOutcome').value = entry.actualOutcome || '';
+                $('postMortem').value = entry.postMortem || '';
+                editIndexInput.value = id;
+                formTitle.innerHTML = `${pencilIcon('text-amber-600')} Edit Entry`;
+                submitBtn.textContent = 'Update Entry';
+                cancelEditBtn.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (btn.dataset.act === 'delete') {
+                if (!confirm('Are you sure you want to delete this research entry?')) return;
+                try { await store.remove(id); if (editIndexInput.value === id) resetForm(); }
+                catch (err) { console.error(err); showError('Could not delete: ' + err.message); }
+            }
+        });
+
+        $('authBtn').addEventListener('click', async () => {
+            clearError();
+            try { if (currentUser) await store.signOut(); else await store.signIn(); }
+            catch (err) { console.error(err); showError('Sign-in problem: ' + (err.code || err.message)); }
+        });
+
+        $('importBtn').addEventListener('click', async () => {
+            const leftovers = readLocal();
+            try {
+                for (const e of leftovers) {
+                    const { id, createdAtMs, updatedAtMs, createdAt, updatedAt, ...rest } = e;
+                    await store.add(rest);
+                }
+                localStorage.removeItem(LOCAL_KEY);
+                applyPermissions();
+            } catch (err) { console.error(err); showError('Import failed: ' + err.message); }
+        });
+
+        resetForm();
+        applyPermissions();
+        renderEntries();
+
+        (async () => {
+            try {
+                store = CLOUD_CONFIGURED ? await createCloudStore() : createLocalStore();
+            } catch (err) {
+                console.error(err);
+                showError('Could not connect to the cloud journal.');
+                applyPermissions();
+                return;
+            }
+            const onData = (list) => { entries = list; renderEntries(); };
+            if (store.mode === 'cloud') {
+                store.onAuth((user) => { currentUser = user; applyPermissions(); renderEntries(); });
+                store.subscribe(onData, (err) => { console.error(err); showError('Could not read the journal: ' + (err.code || err.message)); });
+            } else {
+                store.subscribe(onData);
+            }
+            applyPermissions();
+            renderEntries();
+        })();
+    </script>
+</body>
+</html>
