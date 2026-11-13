@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
+        details > summary { cursor: pointer; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
@@ -19,6 +20,7 @@
                 <span class="bg-indigo-600 text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider">Lifelong Economic Journal</span>
                 <h1 class="text-2xl md:text-3xl font-bold mt-1">Shreyas Koppole's Economics & Finance Portal</h1>
                 <p class="text-slate-400 text-sm mt-1">An open-ended, evidence-based research platform tracking macroeconomic trends across a lifetime.</p>
+                <p id="mpcBadge" class="hidden mt-2 text-xs font-semibold"></p>
             </div>
             <div class="mt-4 md:mt-0 flex flex-col items-end gap-2">
                 <div class="flex items-center space-x-3 bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
@@ -34,19 +36,18 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="max-w-6xl mx-auto px-4 py-8 flex-grow w-full grid grid-cols-1 lg:grid-cols-3 gap-8">
 
         <!-- Left Column: Add / Edit Entry Form -->
-        <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 lg:col-span-1">
-            <h2 id="formTitle" class="text-lg font-bold text-slate-900 mb-4 flex items-center">
-                <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                Log New Entry / Research Note
-            </h2>
+        <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 lg:col-span-1 self-start">
+            <h2 id="formTitle" class="text-lg font-bold text-slate-900 mb-4 flex items-center"></h2>
             <div id="formNotice" class="hidden mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs space-y-2">
                 <p id="formNoticeText"></p>
-                <button id="importBtn" type="button" class="hidden bg-amber-600 hover:bg-amber-700 text-white font-semibold px-3 py-1.5 rounded-lg">Import entries saved on this device</button>
+                <button id="importBtn" type="button" class="hidden bg-amber-600 hover:bg-amber-700 text-white font-semibold px-3 py-1.5 rounded-lg">Import my entries saved on this device</button>
             </div>
+            <p id="lockNote" class="hidden mb-4 p-3 rounded-lg bg-slate-100 border border-slate-200 text-slate-600 text-xs">
+                🔒 The original thesis is locked once committed. That is what makes the journal a credible, timestamped record. You can still add the outcome and post-mortem.
+            </p>
             <form id="entryForm" class="space-y-4">
                 <input type="hidden" id="editIndex" value="-1">
                 <div>
@@ -61,7 +62,8 @@
                     <div>
                         <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Life Stage / Phase</label>
                         <select id="lifeStage" class="w-full rounded-lg border-slate-300 border p-2.5 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500">
-                            <option value="GCSEs (Year 10-11)">GCSEs (Yr 10-11)</option>
+                            <option value="Pre-GCSE (Year 9)">Pre-GCSE (Yr 9)</option>
+                            <option value="GCSEs (Year 10-11)" selected>GCSEs (Yr 10-11)</option>
                             <option value="6th Form (Year 12-13)">6th Form (Yr 12-13)</option>
                             <option value="University / Beyond">University & Beyond</option>
                         </select>
@@ -84,20 +86,17 @@
 
                 <div>
                     <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Call / Thesis Type</label>
-                    <select id="predictionCall" class="w-full rounded-lg border-slate-300 border p-2.5 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500">
-                        <!-- Dynamically populated -->
-                    </select>
+                    <select id="predictionCall" class="w-full rounded-lg border-slate-300 border p-2.5 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500"></select>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Evidence-Based Rationale & Analysis</label>
-                    <textarea id="rationale" rows="4" required placeholder="Detail ONS figures, corporate debt spreads, or forecasting logic..." class="w-full rounded-lg border-slate-300 border p-2.5 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500"></textarea>
+                    <textarea id="rationale" rows="6" required minlength="150" maxlength="8000" placeholder="Min 150 characters. Cite dated figures (ONS CPI, wage growth, MPC vote split, gilt yields), explain the mechanism, make a specific call, and note the risks to your view..." class="w-full rounded-lg border-slate-300 border p-2.5 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500"></textarea>
+                    <p id="rationaleCount" class="text-[10px] text-slate-400 text-right">0 / 150 min</p>
                 </div>
 
-                <!-- Validation Section -->
                 <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-3">
                     <span class="text-xs font-bold uppercase text-slate-600 block">Post-Meeting Validation (Optional)</span>
-                    
                     <div class="grid grid-cols-2 gap-2">
                         <div>
                             <label class="block text-[10px] font-semibold uppercase text-slate-500 mb-1">Outcome Status</label>
@@ -109,96 +108,116 @@
                         </div>
                         <div>
                             <label class="block text-[10px] font-semibold uppercase text-slate-500 mb-1">Actual BoE / Market Outcome</label>
-                            <input type="text" id="actualOutcome" placeholder="e.g., Kept at 5.0%" class="w-full rounded-lg border-slate-300 border p-2 text-xs bg-white">
+                            <input type="text" id="actualOutcome" maxlength="300" placeholder="e.g., Kept at 4.0%" class="w-full rounded-lg border-slate-300 border p-2 text-xs bg-white">
                         </div>
                     </div>
                     <div>
                         <label class="block text-[10px] font-semibold uppercase text-slate-500 mb-1">Why did we get it right/wrong? (Post-Mortem)</label>
-                        <textarea id="postMortem" rows="2" placeholder="Reflect on minutes, forecasting errors, or unexpected shocks..." class="w-full rounded-lg border-slate-300 border p-2 text-xs bg-white"></textarea>
+                        <textarea id="postMortem" rows="2" maxlength="4000" placeholder="Reflect on minutes, forecasting errors, or unexpected shocks..." class="w-full rounded-lg border-slate-300 border p-2 text-xs bg-white"></textarea>
                     </div>
                 </div>
 
                 <div class="flex space-x-2">
-                    <button type="submit" id="submitBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-sm">
-                        Commit Entry to Journal
-                    </button>
-                    <button type="button" id="cancelEditBtn" class="hidden bg-slate-300 hover:bg-slate-400 text-slate-700 font-semibold py-2.5 px-4 rounded-lg text-sm transition">
-                        Cancel
-                    </button>
+                    <button type="submit" id="submitBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-sm">Commit Entry to Journal</button>
+                    <button type="button" id="cancelEditBtn" class="hidden bg-slate-300 hover:bg-slate-400 text-slate-700 font-semibold py-2.5 px-4 rounded-lg text-sm transition">Cancel</button>
                 </div>
             </form>
         </section>
 
-        <!-- Right Column: Timeline & Analytics -->
+        <!-- Right Column -->
         <section class="lg:col-span-2 space-y-6">
-            
-            <!-- Stats Card -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                    <span class="text-xs text-slate-500 font-semibold uppercase">Total Entries</span>
-                    <p id="totalCount" class="text-2xl font-bold text-indigo-600 mt-1">0</p>
+
+            <!-- Leaderboard -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-slate-900">🏆 Leaderboard</h2>
+                    <div class="text-xs text-slate-500 space-x-3">
+                        <span>Entries: <b id="totalCount" class="text-indigo-600">0</b></span>
+                        <span>Correct calls: <b id="correctCount" class="text-emerald-600">0</b></span>
+                    </div>
                 </div>
-                <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                    <span class="text-xs text-slate-500 font-semibold uppercase">Shreyas's Accuracy</span>
-                    <p id="shreyasAcc" class="text-xl font-bold text-slate-800 mt-1">0%</p>
-                </div>
-                <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                    <span class="text-xs text-slate-500 font-semibold uppercase">Dad (AK)'s Accuracy</span>
-                    <p id="dadAcc" class="text-xl font-bold text-slate-800 mt-1">0%</p>
-                </div>
-                <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                    <span class="text-xs text-slate-500 font-semibold uppercase">Correct Calls</span>
-                    <p id="correctCount" class="text-2xl font-bold text-emerald-600 mt-1">0</p>
-                </div>
+                <div id="leaderboard" class="space-y-3"></div>
             </div>
 
-            <!-- Timeline Feed & Filters -->
+            <!-- Guidance -->
+            <details class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-sm">
+                <summary class="text-lg font-bold text-slate-900">📘 Guidance: how entries are scored & ranked</summary>
+                <div class="mt-4 space-y-4 text-slate-600">
+                    <div>
+                        <h3 class="font-semibold text-slate-800">1. AI score out of 10</h3>
+                        <p>Each new entry is graded automatically by an AI examiner against five criteria, 0–2 marks each:</p>
+                        <ul class="list-disc ml-5 mt-1 space-y-0.5">
+                            <li><b>Evidence & data</b>: specific, dated, sourced figures (ONS, BoE, OBR, market pricing).</li>
+                            <li><b>Economic reasoning</b>: a clear causal chain from the evidence to the call.</li>
+                            <li><b>Specific, testable call</b>: what, by when, and how it will be measured.</li>
+                            <li><b>Risks & counter-arguments</b>: what could make you wrong, and the alternative scenarios.</li>
+                            <li><b>Clarity & structure</b>: concise, well organised, correct terminology.</li>
+                        </ul>
+                        <p class="mt-1">Scoring is calibrated to the <b>life stage</b> on the entry, so a Year 10 entry is judged against a strong Year 10 standard, not a professional one.</p>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-slate-800">2. Ranking points per entry</h3>
+                        <table class="text-xs border border-slate-200 mt-1">
+                            <tr class="bg-slate-50"><th class="px-3 py-1 text-left">AI score</th><th class="px-3 py-1 text-left">Points</th></tr>
+                            <tr><td class="px-3 py-1">1–4</td><td class="px-3 py-1">5</td></tr>
+                            <tr><td class="px-3 py-1">5–7</td><td class="px-3 py-1">10</td></tr>
+                            <tr><td class="px-3 py-1">8–10</td><td class="px-3 py-1">20</td></tr>
+                        </table>
+                        <p class="mt-1">Only the first <b>3 entries per person per day</b> earn points, so quality beats volume. Further entries are still scored as feedback.</p>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-slate-800">3. Levels</h3>
+                        <p id="levelsText"></p>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-slate-800">4. Integrity rules</h3>
+                        <ul class="list-disc ml-5 space-y-0.5">
+                            <li>The thesis (topic, call, date, rationale) is <b>locked once committed</b>. Only the outcome and post-mortem can be added later.</li>
+                            <li>An entry can be deleted only within <b>1 hour</b> of posting (to fix mistakes). After that it is permanent.</li>
+                            <li>Scores and points are written only by the server. Nobody can edit them from a browser.</li>
+                            <li>Accuracy % counts resolved calls only. Honest "Incorrect (Learned)" post-mortems are valued: reflection improves future scores.</li>
+                            <li>The AI is a study aid, not an authority. It can't check live data and may misjudge. Use its feedback to improve, not as gospel.</li>
+                        </ul>
+                    </div>
+                </div>
+            </details>
+
+            <!-- Timeline -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-slate-100 gap-4">
                     <h2 class="text-lg font-bold text-slate-900">Lifelong Research & Prediction Timeline</h2>
-                    
-                    <!-- Filters Toolbar -->
                     <div class="flex flex-wrap items-center gap-2">
-                        <div>
-                            <select id="filterForecaster" class="rounded-lg border-slate-300 border p-1.5 text-xs bg-slate-50">
-                                <option value="All">All Forecasters</option>
-                                <option value="Shreyas Koppole">Shreyas Koppole</option>
-                                <option value="Dad (AK)">Dad (AK)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <select id="filterCategory" class="rounded-lg border-slate-300 border p-1.5 text-xs bg-slate-50">
-                                <option value="All">All Topics</option>
-                                <option value="Monetary Policy">Monetary Policy</option>
-                                <option value="Housing & Labor">Housing & Labor</option>
-                                <option value="Behavioral Finance">Behavioral Finance</option>
-                                <option value="Global Markets">Global Markets</option>
-                            </select>
-                        </div>
+                        <select id="filterForecaster" class="rounded-lg border-slate-300 border p-1.5 text-xs bg-slate-50">
+                            <option value="All">All Forecasters</option>
+                            <option value="Shreyas Koppole">Shreyas Koppole</option>
+                            <option value="Dad (AK)">Dad (AK)</option>
+                        </select>
+                        <select id="filterCategory" class="rounded-lg border-slate-300 border p-1.5 text-xs bg-slate-50">
+                            <option value="All">All Topics</option>
+                            <option value="Monetary Policy">Monetary Policy</option>
+                            <option value="Housing & Labor">Housing & Labor</option>
+                            <option value="Behavioral Finance">Behavioral Finance</option>
+                            <option value="Global Markets">Global Markets</option>
+                        </select>
                     </div>
                 </div>
 
                 <div id="errorBanner" class="hidden mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs"></div>
                 <div id="timelineContainer" class="space-y-6">
                     <div id="emptyState" class="text-center py-12 text-slate-400 text-sm">
-                        No entries logged yet. Add your first prediction or global markets note above!
+                        No entries logged yet. Add your first prediction or global markets note!
                     </div>
                 </div>
             </div>
-
         </section>
-
     </main>
 
-    <!-- Footer -->
     <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
         Shreyas & Dad (AK) • Lifelong Economics & Finance Research Journal
     </footer>
 
-
-    <!-- Script -->
     <script type="module">
-        // ====== Firebase project config ======
+        // ====== Firebase project config (public by design; security comes from firestore.rules) ======
         const FIREBASE_CONFIG = {
             apiKey: "AIzaSyCQmEM6M32uZwlR82W0Jdqmly2mvKqLhwk",
             authDomain: "shreyas-econ-portal.firebaseapp.com",
@@ -207,12 +226,30 @@
             messagingSenderId: "618142009302",
             appId: "1:618142009302:web:174a04987083b591cc4677"
         };
-        const ALLOWED_EMAILS = [];
-        // ============================================================================
+        // Firebase Auth UID -> forecaster. UI convenience only (no emails in this public page);
+        // firestore.rules (email-based, not public) is what actually enforces access.
+        // UIDs: Firebase console > Authentication > Users (each person must sign in once first).
+        const WRITERS = {
+            'lIN2WH7T5DWT6tKjcxleJnK6tXY2': 'Shreyas Koppole',
+            '17DYpnO0ekd7xCr6GjX7sA3dluo2': 'Dad (AK)'
+        };
+        // ============================================================================================
 
+        const FORECASTERS = ['Shreyas Koppole', 'Dad (AK)'];
         const LOCAL_KEY = 'shreyas_lifelong_econ_entries';
         const FB_VERSION = '10.12.2';
         const CLOUD_CONFIGURED = !String(FIREBASE_CONFIG.projectId).startsWith('PASTE');
+        const DELETE_WINDOW_MS = 60 * 60 * 1000;
+        const MIN_RATIONALE = 150;
+        const THESIS_IDS = ['forecaster', 'lifeStage', 'category', 'entryDate', 'predictionCall', 'rationale'];
+        const CRITERIA = [
+            ['evidence', 'Evidence & data'], ['reasoning', 'Economic reasoning'], ['specificity', 'Specific, testable call'],
+            ['balance', 'Risks & counter-arguments'], ['communication', 'Clarity & structure']
+        ];
+        const LEVELS = [
+            [0, 'Economics Intern'], [50, 'Junior Analyst'], [150, 'Analyst'], [300, 'Senior Economist'],
+            [600, 'Chief Economist'], [1000, 'MPC Member'], [2000, 'Governor']
+        ];
 
         const $ = (id) => document.getElementById(id);
         const categorySelect = $('category');
@@ -236,10 +273,11 @@
         };
 
         const pencilIcon = (color) => `<svg class="w-5 h-5 mr-2 ${color}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>`;
-
         const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         const fmtDateTime = (ms) => new Date(ms).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-        const todayISO = () => new Date().toISOString().slice(0, 10);
+        const todayISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+
+        // ---------- stores ----------
 
         function readLocal() {
             try { return JSON.parse(localStorage.getItem(LOCAL_KEY)) || []; } catch (e) { return []; }
@@ -257,7 +295,8 @@
                 subscribe(cb) { listener = cb; cb(entries.slice()); },
                 async add(d) { const now = Date.now(); entries.push({ ...d, id: String(now), createdAtMs: now, updatedAtMs: now }); save(); },
                 async update(id, d) { entries = entries.map((e) => (e.id === id ? { ...e, ...d, updatedAtMs: Date.now() } : e)); save(); },
-                async remove(id) { entries = entries.filter((e) => e.id !== id); save(); }
+                async remove(id) { entries = entries.filter((e) => e.id !== id); save(); },
+                async getMpcDates() { return []; }
             };
         }
 
@@ -285,7 +324,11 @@
                 },
                 add(d) { return fsMod.addDoc(col, { ...d, createdAt: fsMod.serverTimestamp(), updatedAt: fsMod.serverTimestamp() }); },
                 update(id, d) { return fsMod.updateDoc(fsMod.doc(db, 'entries', id), { ...d, updatedAt: fsMod.serverTimestamp() }); },
-                remove(id) { return fsMod.deleteDoc(fsMod.doc(db, 'entries', id)); }
+                remove(id) { return fsMod.deleteDoc(fsMod.doc(db, 'entries', id)); },
+                async getMpcDates() {
+                    const s = await fsMod.getDoc(fsMod.doc(db, 'config', 'mpc'));
+                    return s.exists() ? (s.data().dates || []) : [];
+                }
             };
         }
 
@@ -293,18 +336,27 @@
         let entries = [];
         let currentUser = null;
 
-        const canEdit = () => {
-            if (!store) return false;
-            if (store.mode === 'local') return true;
-            if (!currentUser) return false;
-            return ALLOWED_EMAILS.length === 0 || ALLOWED_EMAILS.includes((currentUser.email || '').toLowerCase());
-        };
+        // ---------- permissions ----------
 
-        function showError(msg) {
-            errorBanner.textContent = msg;
-            errorBanner.classList.remove('hidden');
-        }
+        const myName = () => (store && store.mode === 'cloud' && currentUser ? WRITERS[currentUser.uid] || null : null);
+        const canEdit = () => !!store && (store.mode === 'local' || !!myName());
+        const ownsEntry = (e) => store && (store.mode === 'local' || (myName() && myName() === e.forecaster));
+        const canDelete = (e) => ownsEntry(e) && (store.mode === 'local' || Date.now() - e.createdAtMs < DELETE_WINDOW_MS);
+
+        function showError(msg) { errorBanner.textContent = msg; errorBanner.classList.remove('hidden'); }
         function clearError() { errorBanner.classList.add('hidden'); }
+
+        function setFormState() {
+            const allowed = canEdit();
+            const editing = editIndexInput.value !== '-1';
+            [...form.elements].forEach((el) => { el.disabled = !allowed; });
+            if (allowed && editing) THESIS_IDS.forEach((id) => { $(id).disabled = true; });
+            if (allowed && store.mode === 'cloud') {
+                $('forecaster').disabled = true;
+                if (!editing) $('forecaster').value = myName();
+            }
+            $('lockNote').classList.toggle('hidden', !editing);
+        }
 
         function updateCallDropdown(selectedVal = null) {
             const options = callOptions[categorySelect.value] || [];
@@ -318,6 +370,12 @@
             });
         }
 
+        function updateCount() {
+            const n = $('rationale').value.length;
+            $('rationaleCount').textContent = `${n} / ${MIN_RATIONALE} min`;
+            $('rationaleCount').className = 'text-[10px] text-right ' + (n >= MIN_RATIONALE ? 'text-emerald-600' : 'text-slate-400');
+        }
+
         function resetForm() {
             form.reset();
             editIndexInput.value = '-1';
@@ -326,31 +384,29 @@
             formTitle.innerHTML = `${pencilIcon('text-indigo-600')} Log New Entry / Research Note`;
             submitBtn.textContent = 'Commit Entry to Journal';
             cancelEditBtn.classList.add('hidden');
+            setFormState();
+            updateCount();
         }
 
         function applyPermissions() {
-            const allowed = canEdit();
-            [...form.elements].forEach((el) => { el.disabled = !allowed; });
+            setFormState();
             const notice = $('formNotice');
             const text = $('formNoticeText');
             const importBtn = $('importBtn');
             importBtn.classList.add('hidden');
+            notice.classList.remove('hidden');
             if (!store) {
                 notice.classList.add('hidden');
             } else if (store.mode === 'local') {
-                notice.classList.remove('hidden');
-                text.textContent = 'Local mode: entries are saved only in this browser and are not visible to anyone else.';
+                text.textContent = 'Local mode: entries are saved only in this browser. AI scoring and ranking need cloud mode.';
             } else if (!currentUser) {
-                notice.classList.remove('hidden');
-                text.textContent = 'Anyone can read this journal. Sign in with an authorised Google account to add or edit entries.';
-            } else if (!allowed) {
-                notice.classList.remove('hidden');
-                text.textContent = `${currentUser.email} is not an authorised account for this journal.`;
+                text.textContent = 'Anyone can read this journal. Sign in with an authorised Google account to add entries.';
+            } else if (!myName()) {
+                text.textContent = `${currentUser.email} is not an authorised account for this journal (read-only).`;
             } else {
-                const leftovers = readLocal();
-                if (leftovers.length) {
-                    notice.classList.remove('hidden');
-                    text.textContent = `${leftovers.length} entry/entries were saved on this device earlier.`;
+                const mine = readLocal().filter((e) => e.forecaster === myName());
+                if (mine.length) {
+                    text.textContent = `${mine.length} of your entries are saved on this device only.`;
                     importBtn.classList.remove('hidden');
                 } else {
                     notice.classList.add('hidden');
@@ -362,11 +418,21 @@
             if (store && store.mode === 'cloud') {
                 authBtn.classList.remove('hidden');
                 authBtn.textContent = currentUser ? 'Sign out' : 'Sign in with Google';
-                $('authStatus').textContent = currentUser ? currentUser.email : '';
+                $('authStatus').textContent = currentUser ? (myName() || currentUser.email) : '';
             } else {
                 authBtn.classList.add('hidden');
                 $('authStatus').textContent = '';
             }
+        }
+
+        // ---------- scoring display & leaderboard ----------
+
+        function levelFor(points) {
+            let i = 0;
+            while (i + 1 < LEVELS.length && points >= LEVELS[i + 1][0]) i++;
+            const next = LEVELS[i + 1];
+            const pct = next ? Math.round(((points - LEVELS[i][0]) / (next[0] - LEVELS[i][0])) * 100) : 100;
+            return { title: LEVELS[i][1], next: next ? `${next[0] - points} pts to ${next[1]}` : 'Top level reached', pct };
         }
 
         function calculateAccuracy(name) {
@@ -376,24 +442,90 @@
             return Math.round((correct / resolved.length) * 100) + '%';
         }
 
+        function renderBoard() {
+            const rows = FORECASTERS.map((name) => {
+                const mine = entries.filter((e) => e.forecaster === name);
+                const scored = mine.filter((e) => e.ai && e.ai.status === 'done');
+                const points = scored.filter((e) => e.ai.counted).reduce((s, e) => s + (Number(e.ai.points) || 0), 0);
+                const avg = scored.length ? (scored.reduce((s, e) => s + (Number(e.ai.score) || 0), 0) / scored.length).toFixed(1) : '–';
+                return { name, points, count: mine.length, avg, acc: calculateAccuracy(name), lvl: levelFor(points) };
+            }).sort((a, b) => b.points - a.points);
+            const medals = ['🥇', '🥈', '🥉'];
+            $('leaderboard').innerHTML = rows.map((r, i) => `
+                <div class="p-3 rounded-lg border border-slate-100 bg-slate-50">
+                    <div class="flex justify-between items-center flex-wrap gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">${medals[i] || ''}</span>
+                            <div>
+                                <p class="font-bold text-slate-800 text-sm">${esc(r.name)}</p>
+                                <p class="text-xs text-indigo-600 font-semibold">${esc(r.lvl.title)}</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 text-center text-xs">
+                            <div><p class="text-slate-500">Points</p><p class="text-lg font-bold text-indigo-600">${r.points}</p></div>
+                            <div><p class="text-slate-500">Entries</p><p class="text-lg font-bold">${r.count}</p></div>
+                            <div><p class="text-slate-500">Avg AI score</p><p class="text-lg font-bold">${r.avg}</p></div>
+                            <div><p class="text-slate-500">Accuracy</p><p class="text-lg font-bold">${r.acc}</p></div>
+                        </div>
+                    </div>
+                    <div class="mt-2 h-1.5 bg-slate-200 rounded-full overflow-hidden"><div class="h-full bg-indigo-500" style="width:${r.lvl.pct}%"></div></div>
+                    <p class="text-[10px] text-slate-400 mt-1">${esc(r.lvl.next)}</p>
+                </div>`).join('');
+        }
+
+        function aiBlock(entry) {
+            if (store.mode === 'local') return '';
+            const ai = entry.ai;
+            if (!ai || ai.status === 'processing') {
+                return `<div class="text-xs text-slate-500 bg-white p-2.5 rounded-lg border border-dashed border-slate-300">⏳ Queued for AI evaluation (usually scored within an hour)…</div>`;
+            }
+            if (ai.status === 'error') {
+                return `<div class="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg">AI evaluation failed (attempt ${esc(ai.attempts)}/3). It will retry automatically.</div>`;
+            }
+            if (ai.status !== 'done') return '';
+            const s = Number(ai.score) || 0;
+            const tone = s >= 8 ? 'emerald' : s >= 5 ? 'amber' : 'rose';
+            const list = (items, sign, cls) => (items || []).map((t) => `<li class="flex gap-1"><span class="${cls}">${sign}</span><span>${esc(t)}</span></li>`).join('');
+            const crit = CRITERIA.map(([k, label]) => `<span class="px-1.5 py-0.5 rounded bg-slate-100">${esc(label)}: <b>${esc(ai.criteria?.[k] ?? 0)}</b>/2</span>`).join(' ');
+            return `
+                <div class="bg-white p-3 rounded-lg border border-${tone}-200 space-y-2 text-xs">
+                    <div class="flex justify-between items-center flex-wrap gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl font-bold text-${tone}-600">${s}<span class="text-sm text-slate-400">/10</span></span>
+                            <span class="text-slate-500">AI evaluation</span>
+                        </div>
+                        <span class="font-semibold px-2 py-0.5 rounded-full ${ai.counted ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'}">${ai.counted ? `+${esc(ai.points)} pts` : 'Not counted (daily cap)'}</span>
+                    </div>
+                    ${ai.summary ? `<p class="text-slate-600 italic">${esc(ai.summary)}</p>` : ''}
+                    <div class="flex flex-wrap gap-1 text-[10px] text-slate-600">${crit}</div>
+                    <div class="grid md:grid-cols-2 gap-3">
+                        <div><p class="font-semibold text-emerald-700 mb-1">Key positives</p><ul class="space-y-1 text-slate-600">${list(ai.positives, '✔', 'text-emerald-600')}</ul></div>
+                        <div><p class="font-semibold text-rose-700 mb-1">What would raise the score</p><ul class="space-y-1 text-slate-600">${list(ai.improvements, '➜', 'text-rose-600')}</ul></div>
+                    </div>
+                </div>`;
+        }
+
         function renderEntries() {
             timeline.innerHTML = '';
-            const fForecaster = filterForecaster.value;
-            const fCategory = filterCategory.value;
-            const filtered = entries.filter((e) => (fForecaster === 'All' || e.forecaster === fForecaster) && (fCategory === 'All' || e.category === fCategory));
+            const fF = filterForecaster.value;
+            const fC = filterCategory.value;
+            const filtered = entries.filter((e) => (fF === 'All' || e.forecaster === fF) && (fC === 'All' || e.category === fC));
 
             if (filtered.length === 0) {
                 timeline.appendChild(emptyState);
                 emptyState.style.display = 'block';
             } else {
                 emptyState.style.display = 'none';
-                const allowed = canEdit();
                 filtered.slice().sort((a, b) => (new Date(b.date) - new Date(a.date)) || (b.createdAtMs - a.createdAtMs)).forEach((entry) => {
                     let badgeColor = 'bg-slate-100 text-slate-600';
                     if (entry.validationStatus === 'Correct') badgeColor = 'bg-emerald-100 text-emerald-700';
                     if (entry.validationStatus === 'Incorrect') badgeColor = 'bg-rose-100 text-rose-700';
                     const edited = entry.updatedAtMs - entry.createdAtMs > 60000;
-                    const loggedLabel = store.mode === 'cloud' ? 'Logged' : 'Saved on this device';
+                    const loggedLabel = store && store.mode === 'cloud' ? 'Logged' : 'Saved on this device';
+                    const actions = [
+                        ownsEntry(entry) ? `<button data-act="edit" data-id="${esc(entry.id)}" class="text-indigo-600 hover:text-indigo-800 font-semibold text-xs px-1">Add outcome</button>` : '',
+                        canDelete(entry) ? `<button data-act="delete" data-id="${esc(entry.id)}" class="text-red-500 hover:text-red-700 font-semibold text-xs px-1">Delete</button>` : ''
+                    ].join('');
 
                     const card = document.createElement('div');
                     card.className = 'p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-3';
@@ -402,10 +534,7 @@
                             <span class="font-semibold px-2 py-0.5 rounded ${entry.forecaster === 'Shreyas Koppole' ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'}">${esc(entry.forecaster)}</span>
                             <div class="flex items-center space-x-2">
                                 <span class="text-slate-500">${esc(entry.date)} (${esc(entry.lifeStage)})</span>
-                                ${allowed ? `<div class="space-x-1">
-                                    <button data-act="edit" data-id="${esc(entry.id)}" class="text-indigo-600 hover:text-indigo-800 font-semibold text-xs px-1">Edit</button>
-                                    <button data-act="delete" data-id="${esc(entry.id)}" class="text-red-500 hover:text-red-700 font-semibold text-xs px-1">Delete</button>
-                                </div>` : ''}
+                                ${actions ? `<div class="space-x-1">${actions}</div>` : ''}
                             </div>
                         </div>
                         <div class="flex items-center justify-between flex-wrap gap-2">
@@ -417,50 +546,75 @@
                         </div>
                         <p class="text-slate-600 text-sm whitespace-pre-wrap">${esc(entry.rationale)}</p>
                         ${entry.validationStatus && entry.validationStatus !== 'Pending' ? `
-                            <div class="mt-2 pt-2 border-t border-slate-200 text-xs bg-white p-2.5 rounded-lg space-y-1">
+                            <div class="pt-2 border-t border-slate-200 text-xs bg-white p-2.5 rounded-lg space-y-1">
                                 <p class="font-semibold text-slate-700">Actual Outcome: <span class="font-normal text-slate-600">${esc(entry.actualOutcome || 'N/A')}</span></p>
                                 <p class="font-semibold text-slate-700">Post-Mortem Analysis: <span class="font-normal text-slate-600 whitespace-pre-wrap">${esc(entry.postMortem || 'N/A')}</span></p>
                             </div>` : ''}
-                        <p class="text-[11px] text-slate-400">${loggedLabel} ${fmtDateTime(entry.createdAtMs)}${edited ? ` · last edited ${fmtDateTime(entry.updatedAtMs)}` : ''}</p>
+                        ${aiBlock(entry)}
+                        <p class="text-[11px] text-slate-400">${loggedLabel} ${fmtDateTime(entry.createdAtMs)}${edited ? ` · outcome updated ${fmtDateTime(entry.updatedAtMs)}` : ''}</p>
                     `;
                     timeline.appendChild(card);
                 });
             }
 
             $('totalCount').textContent = entries.length;
-            $('shreyasAcc').textContent = calculateAccuracy('Shreyas Koppole');
-            $('dadAcc').textContent = calculateAccuracy('Dad (AK)');
             $('correctCount').textContent = entries.filter((e) => e.validationStatus === 'Correct').length;
+            renderBoard();
         }
 
+        async function showNextMpc() {
+            try {
+                const today = todayISO();
+                const next = (await store.getMpcDates()).filter((d) => typeof d === 'string' && d >= today).sort()[0];
+                if (!next) return;
+                const days = Math.round((Date.parse(next) - Date.parse(today)) / 86400000);
+                const pretty = new Date(`${next}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+                const badge = $('mpcBadge');
+                badge.textContent = `🏦 Next BoE rate decision: ${pretty} (${days === 0 ? 'today' : `in ${days} day${days === 1 ? '' : 's'}`})${days <= 14 ? ', time to log your call!' : ''}`;
+                badge.className = 'mt-2 text-xs font-semibold ' + (days <= 14 ? 'text-amber-300' : 'text-slate-300');
+            } catch (e) { /* optional feature */ }
+        }
+
+        // ---------- events ----------
+
+        $('levelsText').textContent = LEVELS.map(([p, t]) => `${t} (${p}+)`).join(' → ');
         categorySelect.addEventListener('change', () => updateCallDropdown());
         filterForecaster.addEventListener('change', renderEntries);
         filterCategory.addEventListener('change', renderEntries);
         cancelEditBtn.addEventListener('click', resetForm);
+        $('rationale').addEventListener('input', updateCount);
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!canEdit()) return;
             clearError();
-            const data = {
-                forecaster: $('forecaster').value,
-                lifeStage: $('lifeStage').value,
-                category: categorySelect.value,
-                date: $('entryDate').value,
-                prediction: predictionCallSelect.value,
-                rationale: $('rationale').value,
+            const editId = editIndexInput.value;
+            const validation = {
                 validationStatus: $('validationStatus').value,
-                actualOutcome: $('actualOutcome').value,
-                postMortem: $('postMortem').value
+                actualOutcome: $('actualOutcome').value.trim(),
+                postMortem: $('postMortem').value.trim()
             };
             submitBtn.disabled = true;
             try {
-                const editId = editIndexInput.value;
-                if (editId !== '-1') await store.update(editId, data); else await store.add(data);
+                if (editId !== '-1') {
+                    await store.update(editId, validation);
+                } else {
+                    const rationale = $('rationale').value.trim();
+                    if (rationale.length < MIN_RATIONALE) throw new Error(`Rationale needs at least ${MIN_RATIONALE} characters.`);
+                    await store.add({
+                        forecaster: store.mode === 'cloud' ? myName() : $('forecaster').value,
+                        lifeStage: $('lifeStage').value,
+                        category: categorySelect.value,
+                        date: $('entryDate').value,
+                        prediction: predictionCallSelect.value,
+                        rationale,
+                        ...validation
+                    });
+                }
                 resetForm();
             } catch (err) {
                 console.error(err);
-                showError('Could not save: ' + (err.code === 'permission-denied' ? 'this account is not allowed to write to the journal.' : err.message));
+                showError('Could not save: ' + (err.code === 'permission-denied' ? 'not allowed (wrong account, locked field, or invalid data).' : err.message));
             } finally {
                 submitBtn.disabled = !canEdit();
             }
@@ -472,7 +626,7 @@
             const id = btn.dataset.id;
             const entry = entries.find((x) => x.id === id);
             if (!entry) return;
-            if (btn.dataset.act === 'edit') {
+            if (btn.dataset.act === 'edit' && ownsEntry(entry)) {
                 $('forecaster').value = entry.forecaster;
                 $('lifeStage').value = entry.lifeStage;
                 categorySelect.value = entry.category;
@@ -483,14 +637,16 @@
                 $('actualOutcome').value = entry.actualOutcome || '';
                 $('postMortem').value = entry.postMortem || '';
                 editIndexInput.value = id;
-                formTitle.innerHTML = `${pencilIcon('text-amber-600')} Edit Entry`;
+                formTitle.innerHTML = `${pencilIcon('text-amber-600')} Add Outcome & Post-Mortem`;
                 submitBtn.textContent = 'Update Entry';
                 cancelEditBtn.classList.remove('hidden');
+                setFormState(); // thesis fields locked, only outcome / post-mortem editable
+                updateCount();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
-            } else if (btn.dataset.act === 'delete') {
-                if (!confirm('Are you sure you want to delete this research entry?')) return;
+            } else if (btn.dataset.act === 'delete' && canDelete(entry)) {
+                if (!confirm('Delete this research entry? (Only possible within 1 hour of posting.)')) return;
                 try { await store.remove(id); if (editIndexInput.value === id) resetForm(); }
-                catch (err) { console.error(err); showError('Could not delete: ' + err.message); }
+                catch (err) { console.error(err); showError('Could not delete: ' + (err.code === 'permission-denied' ? 'the 1-hour delete window has passed.' : err.message)); }
             }
         });
 
@@ -501,16 +657,28 @@
         });
 
         $('importBtn').addEventListener('click', async () => {
-            const leftovers = readLocal();
-            try {
-                for (const e of leftovers) {
-                    const { id, createdAtMs, updatedAtMs, createdAt, updatedAt, ...rest } = e;
-                    await store.add(rest);
-                }
-                localStorage.removeItem(LOCAL_KEY);
-                applyPermissions();
-            } catch (err) { console.error(err); showError('Import failed: ' + err.message); }
+            const all = readLocal();
+            const keep = [];
+            let imported = 0;
+            for (const e of all) {
+                if (e.forecaster !== myName()) { keep.push(e); continue; }
+                try {
+                    await store.add({
+                        forecaster: myName(),
+                        lifeStage: e.lifeStage, category: e.category, date: e.date, prediction: e.prediction,
+                        rationale: String(e.rationale || ''),
+                        validationStatus: e.validationStatus || 'Pending',
+                        actualOutcome: e.actualOutcome || '', postMortem: e.postMortem || ''
+                    });
+                    imported++;
+                } catch (err) { console.error(err); keep.push(e); }
+            }
+            localStorage.setItem(LOCAL_KEY, JSON.stringify(keep));
+            if (keep.some((e) => e.forecaster === myName())) showError(`Imported ${imported}. Some entries were rejected (e.g. rationale under ${MIN_RATIONALE} characters) and remain on this device.`);
+            applyPermissions();
         });
+
+        // ---------- boot ----------
 
         resetForm();
         applyPermissions();
@@ -527,8 +695,9 @@
             }
             const onData = (list) => { entries = list; renderEntries(); };
             if (store.mode === 'cloud') {
-                store.onAuth((user) => { currentUser = user; applyPermissions(); renderEntries(); });
+                store.onAuth((user) => { currentUser = user; resetForm(); applyPermissions(); renderEntries(); });
                 store.subscribe(onData, (err) => { console.error(err); showError('Could not read the journal: ' + (err.code || err.message)); });
+                showNextMpc();
             } else {
                 store.subscribe(onData);
             }
