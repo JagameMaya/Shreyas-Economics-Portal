@@ -148,19 +148,66 @@ async function callGemini(entry) {
   return JSON.parse(text);
 }
 
-// Retries "busy" errors within the run: now, after 15s, after 45s.
+// Other Flash models this key can use, as back-ups when the main one is busy:
+// stable full Flash models first (newest first), then Flash-Lite. Max 3.
+let alternativesCache = null;
+async function alternativeModels(current) {
+  if (!alternativesCache) {
+    const res = await fetch(`${GEMINI_BASE}/models?pageSize=1000`, {
+      headers: { 'x-goog-api-key': env('GEMINI_API_KEY') },
+      signal: AbortSignal.timeout(30000)
+    });
+    if (!res.ok) return [];
+    const names = ((await res.json()).models || [])
+      .filter((m) => (m.supportedGenerationMethods || []).includes('generateContent'))
+      .map((m) => String(m.name).replace(/^models\//, ''))
+      .filter((n) => /^gemini-\d.*flash/.test(n) && !/preview|exp|image|tts|live|audio|embedding|latest/.test(n));
+    const version = (n) => parseFloat((n.match(/^gemini-(\d+(?:\.\d+)?)/) || [])[1] || '0');
+    const byNewest = (a, b) => version(b) - version(a);
+    alternativesCache = [
+      ...names.filter((n) => !/lite/.test(n)).sort(byNewest),
+      ...names.filter((n) => /lite/.test(n)).sort(byNewest)
+    ];
+  }
+  return alternativesCache.filter((n) => n !== current).slice(0, 3);
+}
+
+const isTransient = (err) => {
+  if (err.name === 'TimeoutError' || err.name === 'AbortError') err.transient = true;
+  return !!err.transient;
+};
+
+// "Busy" handling: retry the main model (now, +15s, +45s), then try up to 3 back-up models once each.
+// If a back-up works, the rest of this run uses it too.
 async function callGeminiWithRetry(entry) {
   const waits = [15000, 45000];
-  for (let i = 0; ; i++) {
+  let lastErr;
+  for (let i = 0; i <= waits.length; i++) {
     try {
       return await callGemini(entry);
     } catch (err) {
-      if (err.name === 'TimeoutError' || err.name === 'AbortError') err.transient = true;
-      if (!err.transient || i >= waits.length) throw err;
-      console.log(`Gemini busy (${err.message.slice(0, 40)}...), retrying in ${waits[i] / 1000}s`);
-      await sleep(waits[i]);
+      if (!isTransient(err)) throw err;
+      lastErr = err;
+      if (i < waits.length) {
+        console.log(`${GEMINI_MODEL} busy, retrying in ${waits[i] / 1000}s`);
+        await sleep(waits[i]);
+      }
     }
   }
+  const main = GEMINI_MODEL;
+  fallbackTried = true; // back-ups that 404 are just skipped, not "auto-resolved"
+  for (const alt of await alternativeModels(main)) {
+    GEMINI_MODEL = alt;
+    console.log(`${main} still busy; trying back-up model ${alt}`);
+    try {
+      return await callGemini(entry);
+    } catch (err) {
+      if (!isTransient(err) && !/HTTP 404/.test(err.message)) throw err;
+      lastErr = err;
+    }
+  }
+  GEMINI_MODEL = main;
+  throw lastErr;
 }
 
 // The score is computed here from the per-criterion marks, never taken from the model directly.
