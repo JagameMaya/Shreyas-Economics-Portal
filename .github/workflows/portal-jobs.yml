@@ -41,3 +41,4 @@ jobs:
           ALERT_EMAILS: ${{ secrets.ALERT_EMAILS }}
           PORTAL_URL: https://jagamemaya.github.io/Shreyas-Economics-Portal/
           FULL_SCAN: ${{ inputs.full_scan }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}   # optional repo variable; blank = gemini-flash-latest
