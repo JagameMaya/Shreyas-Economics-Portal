@@ -138,12 +138,29 @@ async function callGemini(entry) {
   }
   if (!res.ok) {
     const detail = (await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 150);
-    throw new Error(`Gemini HTTP ${res.status} (${GEMINI_MODEL}) ${detail}`);
+    const err = new Error(`Gemini HTTP ${res.status} (${GEMINI_MODEL}) ${detail}`);
+    err.transient = [429, 500, 502, 503, 504].includes(res.status); // busy / rate-limited: try again later
+    throw err;
   }
   const json = await res.json();
   const text = (json?.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('');
   if (!text) throw new Error('Empty AI response');
   return JSON.parse(text);
+}
+
+// Retries "busy" errors within the run: now, after 15s, after 45s.
+async function callGeminiWithRetry(entry) {
+  const waits = [15000, 45000];
+  for (let i = 0; ; i++) {
+    try {
+      return await callGemini(entry);
+    } catch (err) {
+      if (err.name === 'TimeoutError' || err.name === 'AbortError') err.transient = true;
+      if (!err.transient || i >= waits.length) throw err;
+      console.log(`Gemini busy (${err.message.slice(0, 40)}...), retrying in ${waits[i] / 1000}s`);
+      await sleep(waits[i]);
+    }
+  }
 }
 
 // The score is computed here from the per-criterion marks, never taken from the model directly.
@@ -167,7 +184,7 @@ function needsEvaluation(ai) {
   if (!ai) return true;
   if (ai.status === 'done') return false;
   if (ai.status === 'processing') return Date.now() - (ai.startedAtMs || 0) > STALE_MS;
-  if (ai.status === 'error') return (ai.attempts || 0) < MAX_ATTEMPTS;
+  if (ai.status === 'error') return ai.transient === true || (ai.attempts || 0) < MAX_ATTEMPTS;
   return true;
 }
 
@@ -190,11 +207,11 @@ async function evaluateEntry(ref) {
     t.update(ref, { 'ai.status': 'processing', 'ai.startedAtMs': Date.now() });
     return snap.data();
   });
-  if (!entry) return;
+  if (!entry) return { ok: true };
 
   const attempts = (entry.ai?.attempts || 0) + 1;
   try {
-    const result = normalise(await callGemini(entry));
+    const result = normalise(await callGeminiWithRetry(entry));
     const createdAt = entry.createdAt || Timestamp.now();
     const counted = (await countedOnDay(entry.forecaster, createdAt, ref.id)) < DAILY_CAP;
     await ref.update({
@@ -210,9 +227,18 @@ async function evaluateEntry(ref) {
       }
     });
     console.log(`Scored ${ref.id}: ${result.score}/10 counted=${counted}`);
+    return { ok: true };
   } catch (err) {
-    console.error(`Scoring failed for ${ref.id}: ${err.message}`);
-    await ref.update({ 'ai.status': 'error', 'ai.error': String(err.message).slice(0, 200), 'ai.attempts': attempts });
+    const transient = !!err.transient;
+    console.error(`Scoring failed for ${ref.id} (${transient ? 'busy, will retry' : 'counted attempt'}): ${err.message}`);
+    await ref.update({
+      'ai.status': 'error',
+      'ai.error': String(err.message).slice(0, 200),
+      'ai.transient': transient,
+      // "busy" errors don't use up one of the 3 attempts
+      'ai.attempts': transient ? (entry.ai?.attempts || 0) : attempts
+    });
+    return { ok: false, transient };
   }
 }
 
@@ -225,11 +251,17 @@ async function scoreEntries() {
   const q = fullScan ? db.collection('entries') : db.collection('entries').orderBy('createdAt', 'desc').limit(50);
   const snap = await q.get();
   const pending = snap.docs.filter((d) => needsEvaluation(d.data().ai)).slice(0, MAX_PER_RUN);
+  let processed = 0;
   for (const [i, d] of pending.entries()) {
     if (i > 0) await sleep(7000); // stay well inside Gemini free-tier rate limits
-    await evaluateEntry(d.ref);
+    const r = await evaluateEntry(d.ref);
+    processed++;
+    if (r && r.transient) {
+      console.log('Gemini still busy; stopping this run. Remaining entries will be tried on the next run.');
+      break;
+    }
   }
-  console.log(`Scoring: fullScan=${fullScan}, processed=${pending.length}`);
+  console.log(`Scoring: fullScan=${fullScan}, processed=${processed} of ${pending.length} pending`);
 }
 
 // ---------- job 2: MPC alerts ----------
