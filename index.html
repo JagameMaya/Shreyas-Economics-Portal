@@ -479,8 +479,13 @@
             if (!ai || ai.status === 'processing') {
                 return `<div class="text-xs text-slate-500 bg-white p-2.5 rounded-lg border border-dashed border-slate-300">⏳ Queued for AI evaluation (usually scored within an hour)…</div>`;
             }
+            if (ai.status === 'error' && ai.transient) {
+                return `<div class="text-xs text-slate-500 bg-white p-2.5 rounded-lg border border-dashed border-slate-300">⏳ The AI service was busy. Your entry will be scored automatically on a later run.</div>`;
+            }
             if (ai.status === 'error') {
-                return `<div class="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg">AI evaluation failed (attempt ${esc(ai.attempts)}/3). It will retry automatically.</div>`;
+                return `<div class="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg">${(ai.attempts || 0) >= 3
+                    ? 'AI evaluation could not be completed after 3 attempts.'
+                    : `AI evaluation failed (attempt ${esc(ai.attempts)}/3). It will retry automatically.`}</div>`;
             }
             if (ai.status !== 'done') return '';
             const s = Number(ai.score) || 0;
