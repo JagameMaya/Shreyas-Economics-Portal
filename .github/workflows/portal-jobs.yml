@@ -1,0 +1,43 @@
+name: Portal jobs (AI scoring + MPC alerts)
+
+# Only scheduled and manual runs. Deliberately NO pull_request / push triggers,
+# so nobody can get secrets used by opening a PR against the public repo.
+on:
+  schedule:
+    - cron: '17,47 * * * *'   # about every 30 min (GitHub may delay scheduled runs)
+  workflow_dispatch:
+    inputs:
+      full_scan:
+        description: 'Re-check all entries (back-fill / retry)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: portal-jobs
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        working-directory: scripts
+        run: npm install --no-audit --no-fund
+      - name: Run jobs
+        run: node scripts/portal-jobs.mjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          ALERT_EMAILS: ${{ secrets.ALERT_EMAILS }}
+          PORTAL_URL: https://jagamemaya.github.io/Shreyas-Economics-Portal/
+          FULL_SCAN: ${{ inputs.full_scan }}
