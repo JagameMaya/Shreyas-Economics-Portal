@@ -1,0 +1,9 @@
+{
+  "name": "econ-portal-jobs",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "nodemailer": "^6.9.0"
+  }
+}
