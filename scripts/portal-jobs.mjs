@@ -16,7 +16,9 @@ const env = (k, required = true) => {
 initializeApp({ credential: cert(JSON.parse(env('FIREBASE_SERVICE_ACCOUNT'))) });
 const db = getFirestore();
 
-const GEMINI_MODEL = env('GEMINI_MODEL', false) || 'gemini-2.5-flash';
+// 'gemini-flash-latest' is Google's alias for the current Flash model. If it ever 404s,
+// the job looks up an available Flash model automatically (see resolveFallbackModel).
+let GEMINI_MODEL = env('GEMINI_MODEL', false) || 'gemini-flash-latest';
 const PORTAL_URL = env('PORTAL_URL', false) || 'https://jagamemaya.github.io/';
 
 const RUBRIC_VERSION = 1;
@@ -94,9 +96,30 @@ ${e.postMortem ? `Outcome status: ${clean(e.validationStatus, 20)}\nActual outco
 </entry>`;
 }
 
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+let fallbackTried = false;
+
+// Picks the newest stable Flash model this key can use (preview only if no stable one exists).
+async function resolveFallbackModel() {
+  const res = await fetch(`${GEMINI_BASE}/models?pageSize=1000`, {
+    headers: { 'x-goog-api-key': env('GEMINI_API_KEY') },
+    signal: AbortSignal.timeout(30000)
+  });
+  if (!res.ok) throw new Error(`Gemini model list HTTP ${res.status}`);
+  const models = ((await res.json()).models || [])
+    .filter((m) => (m.supportedGenerationMethods || []).includes('generateContent'))
+    .map((m) => String(m.name).replace(/^models\//, ''))
+    .filter((n) => /^gemini-.*flash/.test(n) && !/lite|image|tts|live|audio|embedding/.test(n));
+  const version = (n) => parseFloat((n.match(/^gemini-(\d+(?:\.\d+)?)/) || [])[1] || '0');
+  const byNewest = (a, b) => version(b) - version(a);
+  const stable = models.filter((n) => !/preview|exp/.test(n)).sort(byNewest);
+  const pick = stable[0] || models.sort(byNewest)[0];
+  if (!pick) throw new Error('No Gemini Flash model available for this key');
+  return pick;
+}
+
 async function callGemini(entry) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`;
-  const res = await fetch(url, {
+  const res = await fetch(`${GEMINI_BASE}/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env('GEMINI_API_KEY') },
     body: JSON.stringify({
@@ -106,7 +129,17 @@ async function callGemini(entry) {
     }),
     signal: AbortSignal.timeout(60000)
   });
-  if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`);
+  if (res.status === 404 && !fallbackTried) {
+    fallbackTried = true;
+    const old = GEMINI_MODEL;
+    GEMINI_MODEL = await resolveFallbackModel();
+    console.log(`Model ${old} not found; switching to ${GEMINI_MODEL}`);
+    return callGemini(entry);
+  }
+  if (!res.ok) {
+    const detail = (await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 150);
+    throw new Error(`Gemini HTTP ${res.status} (${GEMINI_MODEL}) ${detail}`);
+  }
   const json = await res.json();
   const text = (json?.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('');
   if (!text) throw new Error('Empty AI response');
