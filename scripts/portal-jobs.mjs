@@ -21,9 +21,20 @@ const db = getFirestore();
 let GEMINI_MODEL = env('GEMINI_MODEL', false) || 'gemini-flash-latest';
 const PORTAL_URL = env('PORTAL_URL', false) || 'https://jagamemaya.github.io/';
 
-const RUBRIC_VERSION = 1;
+// v2 (2026-11-16): entries are judged by intention (Forecast vs Analysis); conviction calls are no longer
+// penalised for being one-sided. Older scores are only redone by a manual run with "rescore" ticked.
+const RUBRIC_VERSION = 2;
+
+// Call types that take a position on an outcome. Everything else defaults to Analysis.
+const FORECAST_CALLS = new Set([
+  'Rate Cut / Dovish', 'Rate Hold / Neutral', 'Rate Hike / Hawkish',
+  'House Price Growth (Bullish)', 'House Price Correction (Bearish)',
+  'Irrational Exuberance / Bubble', 'Panic Selling / Liquidity Crunch',
+  'Geopolitical Shock / Risk-Off'
+]);
 const DAILY_CAP = 3;          // max entries per forecaster per day that earn points
 const MAX_ATTEMPTS = 3;
+const RESCORE = process.env.RESCORE === 'true'; // manual run option: re-mark entries scored with an older rubric
 const MAX_PER_RUN = 10;
 const STALE_MS = 30 * 60 * 1000;
 const ALERT_WINDOW_DAYS = 14;
@@ -31,15 +42,27 @@ const ALERT_WINDOW_DAYS = 14;
 const CRITERIA = ['evidence', 'reasoning', 'specificity', 'balance', 'communication'];
 
 const SYSTEM_PROMPT = `You are a strict but encouraging economics examiner and research mentor with a UK focus
-(Bank of England MPC, ONS, OBR, HM Treasury, global markets). You grade ONE research / forecast journal entry.
+(Bank of England MPC, ONS, OBR, HM Treasury, global markets). You grade ONE journal entry.
 
-Score each criterion with an integer 0, 1 or 2:
-- evidence: 0 = no data; 1 = some data but vague, undated or unsourced; 2 = specific, dated, sourced figures relevant to the call (e.g. ONS CPI, wage growth, MPC vote split, gilt yields, OIS pricing).
-- reasoning: 0 = assertion only; 1 = partial causal chain; 2 = clear chain from evidence to conclusion using correct economic mechanisms (transmission, expectations, supply/demand, etc.).
-- specificity: 0 = vague; 1 = direction only; 2 = falsifiable and time-bound (what, by when, how it will be measured).
-- balance: 0 = one-sided; 1 = mentions a risk; 2 = weighs counter-arguments, alternative scenarios or what would change the view.
-- communication: 0 = hard to follow; 1 = understandable; 2 = well structured, concise, precise terminology.
+STEP 1 - decide the entry's TYPE from its intention:
+- "forecast": takes a position on what will happen (e.g. a Bank Rate decision, house prices, a market move).
+- "analysis": explains, critiques or evaluates (e.g. a policy critique, a behavioural-bias analysis, a trend or credit note) without needing a specific prediction.
+You are given a type hint from the call type the writer chose. Use it unless the text clearly does the other thing
+(e.g. an "analysis" note that ends with a firm, time-bound prediction is a forecast).
+
+STEP 2 - judge the entry by what it is trying to do. Score each criterion with an integer 0, 1 or 2:
+- evidence (both types): 0 = no data; 1 = some data but vague, undated or unsourced; 2 = specific, dated, sourced figures relevant to the argument (e.g. ONS CPI, wage growth, MPC vote split, gilt yields, OIS pricing).
+- reasoning (both types): 0 = assertion only; 1 = partial causal chain; 2 = clear chain from evidence to conclusion using correct economic mechanisms (macro and/or micro: transmission, expectations, costs, supply/demand, etc.).
+- specificity:
+    forecast: 0 = no clear call; 1 = direction only; 2 = clear, testable call (direction/size, by when e.g. the next MPC meeting, how it will be judged).
+    analysis: 0 = no clear point; 1 = a point is made but loosely; 2 = a clear central argument and a conclusion that answers it.
+- balance:
+    forecast: RISK AWARENESS, not "both sides". 0 = no risks considered; 1 = a risk is mentioned in passing; 2 = names the main risk or the data/event that would invalidate the call (one or two sentences is enough). A stated confidence level is a plus.
+      A forecast that argues firmly for one outcome from the prevailing evidence is GOOD forecasting. Never mark it down for being one-sided, and never suggest a general pros-and-cons discussion.
+    analysis: EVALUATION. 0 = descriptive only; 1 = some weighing of factors; 2 = weighs the significance of factors and limitations or alternative views, then reaches a justified judgement (as in A-level evaluation).
+- communication (both types): 0 = hard to follow; 1 = understandable; 2 = well structured, concise, precise terminology.
 If a post-mortem is present, credit honest, specific reflection within reasoning and balance.
+Your improvements must fit the type: for a forecast suggest things like sharper evidence, a time-bound call or stating what would change the view; for an analysis suggest things like a clearer thesis or deeper evaluation.
 
 Calibrate expectations to the writer's stated life stage: a Year 9 or GCSE student is not expected to write like a
 professional economist, but the score must still reflect quality relative to that stage.
@@ -53,6 +76,7 @@ Return 2-3 positives and 2-3 concrete improvements that would most raise the sco
 const RESPONSE_SCHEMA = {
   type: 'OBJECT',
   properties: {
+    entryType: { type: 'STRING', enum: ['forecast', 'analysis'] },
     criteria: {
       type: 'OBJECT',
       properties: Object.fromEntries(CRITERIA.map((c) => [c, { type: 'INTEGER' }])),
@@ -62,7 +86,7 @@ const RESPONSE_SCHEMA = {
     improvements: { type: 'ARRAY', items: { type: 'STRING' } },
     summary: { type: 'STRING' }
   },
-  required: ['criteria', 'positives', 'improvements', 'summary']
+  required: ['entryType', 'criteria', 'positives', 'improvements', 'summary']
 };
 
 // ---------- helpers ----------
@@ -89,6 +113,7 @@ function buildPrompt(e) {
 Life stage: ${clean(e.lifeStage, 60)}
 Topic: ${clean(e.category, 60)}
 Call / thesis type: ${clean(e.prediction, 80)}
+Type hint from call type: ${FORECAST_CALLS.has(e.prediction) ? 'forecast' : 'analysis'}
 Entry date: ${clean(e.date, 20)}
 Rationale:
 ${clean(e.rationale, 8000)}
@@ -219,6 +244,7 @@ function normalise(raw) {
   }
   const list = (a) => (Array.isArray(a) ? a : []).slice(0, 3).map((s) => String(s).slice(0, 250));
   return {
+    entryType: raw?.entryType === 'analysis' ? 'analysis' : 'forecast',
     criteria,
     score: CRITERIA.reduce((s, c) => s + criteria[c], 0),
     positives: list(raw?.positives),
@@ -229,7 +255,7 @@ function normalise(raw) {
 
 function needsEvaluation(ai) {
   if (!ai) return true;
-  if (ai.status === 'done') return false;
+  if (ai.status === 'done') return RESCORE && (ai.rubricVersion || 1) < RUBRIC_VERSION;
   if (ai.status === 'processing') return Date.now() - (ai.startedAtMs || 0) > STALE_MS;
   if (ai.status === 'error') return ai.transient === true || (ai.attempts || 0) < MAX_ATTEMPTS;
   return true;
