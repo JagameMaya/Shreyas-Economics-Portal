@@ -11,6 +11,10 @@ on:
         description: 'Re-check all entries (back-fill / retry)'
         type: boolean
         default: false
+      rescore:
+        description: 'Re-mark entries scored with an older rubric (tick full scan too)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -41,4 +45,5 @@ jobs:
           ALERT_EMAILS: ${{ secrets.ALERT_EMAILS }}
           PORTAL_URL: https://jagamemaya.github.io/Shreyas-Economics-Portal/
           FULL_SCAN: ${{ inputs.full_scan }}
+          RESCORE: ${{ inputs.rescore }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}   # optional repo variable; blank = gemini-flash-latest
