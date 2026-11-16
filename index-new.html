@@ -546,6 +546,7 @@
         const openEntries = new Set();
         const shownPerTopic = {};
         let autoOpenPending = false;
+        const autoOpened = new Set();    // topic groups opened by a filter/search (not by the user)
         const MAX_FEATURED = 5;
         let highlightId = null;          // entry opened via a permalink, briefly outlined
         let pendingLinkId = (location.hash.match(/^#entry-([A-Za-z0-9_-]+)$/) || [])[1] || null;
@@ -664,9 +665,16 @@
                 (!q || [e.rationale, e.prediction, e.actualOutcome, e.postMortem, e.category].some((t) => String(t || '').toLowerCase().includes(q))))
                 .sort((a, b) => (new Date(b.date) - new Date(a.date)) || (b.createdAtMs - a.createdAtMs));
 
-            // When a search or a single-topic filter is applied, open the matching groups once.
-            if (autoOpenPending && (q || fC !== 'All' || fS !== 'All')) filtered.forEach((e) => openTopics.add(e.category));
-            autoOpenPending = false;
+            // Filters/search open the matching groups; when they're cleared, the groups they opened close again
+            // (groups the user opened by hand stay open).
+            if (autoOpenPending) {
+                autoOpened.forEach((t) => openTopics.delete(t));
+                autoOpened.clear();
+                if (q || fC !== 'All' || fS !== 'All') {
+                    filtered.forEach((e) => { if (!openTopics.has(e.category)) { openTopics.add(e.category); autoOpened.add(e.category); } });
+                }
+                autoOpenPending = false;
+            }
             timeline.innerHTML = '';
 
             // Showcase: author-picked best work, always at the top (respects only the writer filter).
@@ -772,7 +780,7 @@
         }, true);
 
         $('expandAllBtn').addEventListener('click', () => { TOPICS.forEach((t) => openTopics.add(t)); entries.forEach((e) => openTopics.add(e.category)); renderEntries(); });
-        $('collapseAllBtn').addEventListener('click', () => { openTopics.clear(); openEntries.clear(); renderEntries(); });
+        $('collapseAllBtn').addEventListener('click', () => { openTopics.clear(); openEntries.clear(); autoOpened.clear(); renderEntries(); });
         cancelEditBtn.addEventListener('click', resetForm);
         $('rationale').addEventListener('input', updateCount);
 
