@@ -4,33 +4,97 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shreyas Koppole's Economics & Finance Research Portal</title>
+    <meta name="color-scheme" content="light dark">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // Apple-inspired theme: system font (SF on Apple devices, Segoe UI on Windows),
+        // Apple-style blue accent (re-mapped onto the "indigo" classes) and Apple's light grey.
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['-apple-system', 'BlinkMacSystemFont', 'system-ui', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'] },
+                    colors: {
+                        indigo: { 50: '#eef5ff', 100: '#dcebff', 200: '#b8d7ff', 300: '#84bbff', 400: '#4a9bff', 500: '#0a84ff', 600: '#0071e3', 700: '#0062c4', 800: '#004f9e', 900: '#003a75' },
+                        slate: { 50: '#f5f5f7', 100: '#ececf0', 200: '#e3e3e8', 300: '#d2d2d7', 400: '#a1a1a6', 500: '#86868b', 600: '#6e6e73', 700: '#48484a', 800: '#1d1d1f', 900: '#1d1d1f' }
+                    }
+                }
+            }
+        };
+    </script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { -webkit-font-smoothing: antialiased; letter-spacing: -0.01em; }
+        h1, h2 { letter-spacing: -0.022em; }
         details > summary { cursor: pointer; }
+        details > summary.list-none::-webkit-details-marker { display: none; }
+
+        /* Cards: larger radius, hairline border, soft shadow */
+        .bg-white.rounded-xl { border-radius: 18px; border-color: rgba(0,0,0,0.06) !important; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04) !important; }
+        details.rounded-lg { border-radius: 12px; }
+        details.bg-white.rounded-xl { box-shadow: none !important; border-radius: 14px; } /* topic groups sit flat inside the timeline card */
+
+        /* Form controls */
+        input:not([type=hidden]), select, textarea { border-radius: 10px !important; border-color: rgba(0,0,0,0.08) !important; background-color: #f5f5f7 !important; transition: box-shadow .15s, border-color .15s; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #0a84ff !important; box-shadow: 0 0 0 4px rgba(10,132,255,0.18) !important; }
+        button { transition: background-color .15s, opacity .15s, transform .05s; }
+        button:active { transform: scale(0.98); }
+
+        /* Segmented controls (iOS style) */
+        .seg { display: inline-flex; background: rgba(118,118,128,0.12); border-radius: 9px; padding: 2px; }
+        .seg button { font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 7px; color: inherit; white-space: nowrap; }
+        .seg button[aria-pressed=true] { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 1px rgba(0,0,0,0.04); font-weight: 600; }
+
+        /* Gentle reveal when a topic/entry opens */
+        @keyframes reveal { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+        details[open] > summary + * { animation: reveal .18s ease-out; }
+
+        /* Frosted header */
+        .glass { background: rgba(255,255,255,0.72); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
+
+        /* ---------- Dark mode (follows the device setting) ---------- */
+        @media (prefers-color-scheme: dark) {
+            body { background: #000 !important; color: #f5f5f7 !important; }
+            .glass { background: rgba(22,22,23,0.72); }
+            .bg-white { background-color: #1c1c1e !important; }
+            .bg-slate-50, .bg-slate-50\/60 { background-color: #2c2c2e !important; }
+            .bg-slate-100, .hover\:bg-slate-100:hover, .hover\:bg-slate-50:hover { background-color: #3a3a3c !important; }
+            .bg-slate-200 { background-color: #48484a !important; }
+            .text-slate-900, .text-slate-800 { color: #f5f5f7 !important; }
+            .text-slate-700, .text-slate-600 { color: #d1d1d6 !important; }
+            .text-slate-500, .text-slate-400 { color: #98989d !important; }
+            [class*="border-slate"], .border, .border-b, .border-t { border-color: rgba(255,255,255,0.1) !important; }
+            .bg-white.rounded-xl { border-color: rgba(255,255,255,0.08) !important; box-shadow: none !important; }
+            input:not([type=hidden]), select, textarea { background-color: #2c2c2e !important; border-color: rgba(255,255,255,0.12) !important; color: #f5f5f7; }
+            .bg-indigo-50, .bg-indigo-100 { background-color: rgba(10,132,255,0.18) !important; }
+            .text-indigo-700, .text-indigo-600 { color: #64a8ff !important; }
+            .bg-emerald-50, .bg-emerald-100 { background-color: rgba(48,209,88,0.16) !important; }
+            .text-emerald-700, .text-emerald-600 { color: #30d158 !important; }
+            .bg-amber-50, .bg-amber-50\/60, .bg-amber-100 { background-color: rgba(255,159,10,0.14) !important; }
+            .text-amber-700, .text-amber-800, .text-amber-600 { color: #ffb340 !important; }
+            .bg-rose-50, .bg-rose-100 { background-color: rgba(255,69,58,0.16) !important; }
+            .text-rose-700, .text-rose-600 { color: #ff6961 !important; }
+            .border-amber-200 { border-color: rgba(255,159,10,0.3) !important; }
+            .seg { background: rgba(118,118,128,0.24); }
+            .seg button[aria-pressed=true] { background: #636366; color: #fff; }
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-    <!-- Header -->
-    <header class="bg-slate-900 text-white shadow-md">
-        <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center">
-            <div>
-                <span class="bg-indigo-600 text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider">Lifelong Economic Journal</span>
-                <h1 class="text-2xl md:text-3xl font-bold mt-1">Shreyas Koppole's Economics & Finance Portal</h1>
-                <p class="text-slate-400 text-sm mt-1">An open-ended, evidence-based research platform tracking macroeconomic trends across a lifetime.</p>
-                <p id="mpcBadge" class="hidden mt-2 text-xs font-semibold"></p>
+    <!-- Header (frosted, stays at the top while scrolling) -->
+    <header class="glass sticky top-0 z-30 border-b border-black/5">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-3">
+            <div class="text-center md:text-left">
+                <span class="text-[11px] font-semibold uppercase tracking-wider text-indigo-600">Lifelong Economic Journal</span>
+                <h1 class="text-2xl md:text-[28px] font-semibold text-slate-900 leading-tight">Shreyas Koppole's Economics & Finance Portal</h1>
+                <p class="text-slate-500 text-sm mt-0.5">An open-ended, evidence-based research platform tracking macroeconomic trends across a lifetime.</p>
+                <p id="mpcBadge" class="hidden mt-1 text-xs font-semibold"></p>
             </div>
-            <div class="mt-4 md:mt-0 flex flex-col items-end gap-2">
-                <div class="flex items-center space-x-3 bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
-                    <span class="text-xs text-slate-400">Forecasters:</span>
-                    <span class="font-semibold text-indigo-400 text-sm">Shreyas & Dad (AK)</span>
-                </div>
+            <div class="flex flex-col items-center md:items-end gap-2">
+                <span class="text-xs text-slate-500">Forecasters: <span class="font-semibold text-slate-800">Shreyas & Dad (AK)</span></span>
                 <div class="flex items-center gap-2 text-xs">
-                    <span id="modeBadge" class="px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">Loading…</span>
-                    <span id="authStatus" class="text-slate-400"></span>
-                    <button id="authBtn" type="button" class="hidden bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded-lg font-semibold">Sign in</button>
+                    <span id="modeBadge" class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">Loading…</span>
+                    <span id="authStatus" class="text-slate-500"></span>
+                    <button id="authBtn" type="button" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-1.5 rounded-full font-semibold">Sign in</button>
                 </div>
             </div>
         </div>
@@ -118,8 +182,8 @@
                 </div>
 
                 <div class="flex space-x-2">
-                    <button type="submit" id="submitBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-sm">Commit Entry to Journal</button>
-                    <button type="button" id="cancelEditBtn" class="hidden bg-slate-300 hover:bg-slate-400 text-slate-700 font-semibold py-2.5 px-4 rounded-lg text-sm transition">Cancel</button>
+                    <button type="submit" id="submitBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-full text-sm transition shadow-sm">Commit Entry to Journal</button>
+                    <button type="button" id="cancelEditBtn" class="hidden bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 px-4 rounded-full text-sm transition">Cancel</button>
                 </div>
             </form>
         </section>
@@ -145,14 +209,20 @@
                 <div class="mt-4 space-y-4 text-slate-600">
                     <div>
                         <h3 class="font-semibold text-slate-800">1. AI score out of 10</h3>
-                        <p>Each new entry is graded automatically by an AI examiner against five criteria, 0–2 marks each:</p>
+                        <p>Each new entry is graded automatically by an AI examiner, judged by <b>what the entry is trying to do</b>. The call type sets the default, but the AI follows the clear intention of the text:</p>
                         <ul class="list-disc ml-5 mt-1 space-y-0.5">
-                            <li><b>Evidence & data</b>: specific, dated, sourced figures (ONS, BoE, OBR, market pricing).</li>
-                            <li><b>Economic reasoning</b>: a clear causal chain from the evidence to the call.</li>
-                            <li><b>Specific, testable call</b>: what, by when, and how it will be measured.</li>
-                            <li><b>Risks & counter-arguments</b>: what could make you wrong, and the alternative scenarios.</li>
-                            <li><b>Clarity & structure</b>: concise, well organised, correct terminology.</li>
+                            <li><b>Forecast</b>: takes a position on what will happen (Rate Cut / Hold / Hike, House Price Growth / Correction, Bubble, Panic Selling, Risk-Off).</li>
+                            <li><b>Analysis</b>: explains, critiques or evaluates (Policy Critique, Cognitive Bias, Wage-Inflation, Sentiment, Macro Trend, Sector Rotation, Credit Spread, Rental Market notes).</li>
                         </ul>
+                        <p class="mt-1">Five criteria, 0–2 marks each:</p>
+                        <table class="text-xs border border-slate-200 mt-1">
+                            <tr class="bg-slate-50"><th class="px-2 py-1 text-left">Criterion</th><th class="px-2 py-1 text-left">Forecast</th><th class="px-2 py-1 text-left">Analysis</th></tr>
+                            <tr><td class="px-2 py-1 font-semibold">Evidence & data</td><td class="px-2 py-1" colspan="2">Specific, dated, sourced figures (ONS, BoE, OBR, market pricing).</td></tr>
+                            <tr><td class="px-2 py-1 font-semibold">Economic reasoning</td><td class="px-2 py-1" colspan="2">A clear causal chain from the evidence to the conclusion.</td></tr>
+                            <tr><td class="px-2 py-1 font-semibold">3rd</td><td class="px-2 py-1"><b>Clear, testable call</b>: direction, by when, how it will be judged.</td><td class="px-2 py-1"><b>Clear thesis & conclusion</b>: a central argument that is answered.</td></tr>
+                            <tr><td class="px-2 py-1 font-semibold">4th</td><td class="px-2 py-1"><b>Risks & invalidation</b>: the main risk, what would change your view, confidence. <i>A one-sided, conviction call is fine.</i></td><td class="px-2 py-1"><b>Evaluation & judgement</b>: weighs factors and limitations, then reaches a justified view.</td></tr>
+                            <tr><td class="px-2 py-1 font-semibold">Clarity & structure</td><td class="px-2 py-1" colspan="2">Concise, well organised, correct terminology.</td></tr>
+                        </table>
                         <p class="mt-1">Scoring is calibrated to the <b>life stage</b> on the entry, so a Year 10 entry is judged against a strong Year 10 standard, not a professional one.</p>
                     </div>
                     <div>
@@ -174,6 +244,7 @@
                         <ul class="list-disc ml-5 space-y-0.5">
                             <li>The thesis (topic, call, date, rationale) is <b>locked once committed</b>. Only the outcome and post-mortem can be added later.</li>
                             <li>An entry can be deleted only within <b>1 hour</b> of posting (to fix mistakes). After that it is permanent.</li>
+                            <li><b>⭐ Showcase:</b> each author can feature up to 5 of their best entries at the top. Featuring only changes where an entry is shown, never its content or timestamps. Use <b>🔗 Copy link</b> to share a specific entry, e.g. in a personal statement or CV.</li>
                             <li>Scores and points are written only by the server. Nobody can edit them from a browser.</li>
                             <li>Accuracy % counts resolved calls only. Honest "Incorrect (Learned)" post-mortems are valued: reflection improves future scores.</li>
                             <li>The AI is a study aid, not an authority. It can't check live data and may misjudge. Use its feedback to improve, not as gospel.</li>
@@ -187,7 +258,10 @@
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-slate-100 gap-4">
                     <h2 class="text-lg font-bold text-slate-900">Lifelong Research & Prediction Timeline</h2>
                     <div class="flex flex-wrap items-center gap-2">
-                        <select id="filterForecaster" class="rounded-lg border-slate-300 border p-1.5 text-xs bg-slate-50">
+                        <!-- iOS-style segmented controls; they drive the hidden selects below -->
+                        <div class="seg" data-for="filterForecaster" role="group" aria-label="Forecaster"></div>
+                        <div class="seg" data-for="filterStatus" role="group" aria-label="Outcome"></div>
+                        <select id="filterForecaster" class="hidden">
                             <option value="All">All Forecasters</option>
                             <option value="Shreyas Koppole">Shreyas Koppole</option>
                             <option value="Dad (AK)">Dad (AK)</option>
@@ -199,11 +273,25 @@
                             <option value="Behavioral Finance">Behavioral Finance</option>
                             <option value="Global Markets">Global Markets</option>
                         </select>
+                        <select id="filterStatus" class="hidden">
+                            <option value="All">All Outcomes</option>
+                            <option value="Pending">Pending outcome</option>
+                            <option value="Correct">Correct</option>
+                            <option value="Incorrect">Incorrect</option>
+                        </select>
+                        <input id="filterText" type="search" placeholder="Search text…" class="rounded-lg border-slate-300 border p-1.5 text-xs bg-slate-50 w-32">
+                    </div>
+                </div>
+                <div class="flex justify-between items-center mb-3 text-xs">
+                    <span id="resultCount" class="text-slate-500"></span>
+                    <div class="space-x-3">
+                        <button type="button" id="expandAllBtn" class="text-indigo-600 hover:text-indigo-800 font-semibold">Expand topics</button>
+                        <button type="button" id="collapseAllBtn" class="text-indigo-600 hover:text-indigo-800 font-semibold">Collapse all</button>
                     </div>
                 </div>
 
                 <div id="errorBanner" class="hidden mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs"></div>
-                <div id="timelineContainer" class="space-y-6">
+                <div id="timelineContainer" class="space-y-3">
                     <div id="emptyState" class="text-center py-12 text-slate-400 text-sm">
                         No entries logged yet. Add your first prediction or global markets note!
                     </div>
@@ -212,7 +300,7 @@
         </section>
     </main>
 
-    <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
+    <footer class="py-8 text-center text-xs text-slate-400">
         Shreyas & Dad (AK) • Lifelong Economics & Finance Research Journal
     </footer>
 
@@ -242,9 +330,12 @@
         const DELETE_WINDOW_MS = 60 * 60 * 1000;
         const MIN_RATIONALE = 150;
         const THESIS_IDS = ['forecaster', 'lifeStage', 'category', 'entryDate', 'predictionCall', 'rationale'];
-        const CRITERIA = [
-            ['evidence', 'Evidence & data'], ['reasoning', 'Economic reasoning'], ['specificity', 'Specific, testable call'],
-            ['balance', 'Risks & counter-arguments'], ['communication', 'Clarity & structure']
+        // Labels for the 3rd/4th criteria depend on how the AI assessed the entry (ai.entryType).
+        const criteriaFor = (type) => [
+            ['evidence', 'Evidence & data'], ['reasoning', 'Economic reasoning'],
+            ['specificity', type === 'analysis' ? 'Clear thesis & conclusion' : 'Clear, testable call'],
+            ['balance', type === 'analysis' ? 'Evaluation & judgement' : 'Risks & invalidation'],
+            ['communication', 'Clarity & structure']
         ];
         const LEVELS = [
             [0, 'Economics Intern'], [50, 'Junior Analyst'], [150, 'Analyst'], [300, 'Senior Economist'],
@@ -296,6 +387,7 @@
                 async add(d) { const now = Date.now(); entries.push({ ...d, id: String(now), createdAtMs: now, updatedAtMs: now }); save(); },
                 async update(id, d) { entries = entries.map((e) => (e.id === id ? { ...e, ...d, updatedAtMs: Date.now() } : e)); save(); },
                 async remove(id) { entries = entries.filter((e) => e.id !== id); save(); },
+                async setFeatured(id, val) { entries = entries.map((e) => (e.id === id ? { ...e, featured: val } : e)); save(); },
                 async getMpcDates() { return []; }
             };
         }
@@ -325,6 +417,8 @@
                 add(d) { return fsMod.addDoc(col, { ...d, createdAt: fsMod.serverTimestamp(), updatedAt: fsMod.serverTimestamp() }); },
                 update(id, d) { return fsMod.updateDoc(fsMod.doc(db, 'entries', id), { ...d, updatedAt: fsMod.serverTimestamp() }); },
                 remove(id) { return fsMod.deleteDoc(fsMod.doc(db, 'entries', id)); },
+                // No updatedAt: featuring is presentation only and must not show as "outcome updated".
+                setFeatured(id, val) { return fsMod.updateDoc(fsMod.doc(db, 'entries', id), { featured: val }); },
                 async getMpcDates() {
                     const s = await fsMod.getDoc(fsMod.doc(db, 'config', 'mpc'));
                     return s.exists() ? (s.data().dates || []) : [];
@@ -413,7 +507,7 @@
                 }
             }
             $('modeBadge').textContent = !store ? 'Unavailable' : store.mode === 'cloud' ? 'Cloud-synced' : 'Local only';
-            $('modeBadge').className = 'px-2 py-0.5 rounded-full ' + (store && store.mode === 'cloud' ? 'bg-emerald-700 text-emerald-100' : 'bg-slate-700 text-slate-300');
+            $('modeBadge').className = 'px-2 py-0.5 rounded-full ' + (store && store.mode === 'cloud' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600');
             const authBtn = $('authBtn');
             if (store && store.mode === 'cloud') {
                 authBtn.classList.remove('hidden');
@@ -491,13 +585,13 @@
             const s = Number(ai.score) || 0;
             const tone = s >= 8 ? 'emerald' : s >= 5 ? 'amber' : 'rose';
             const list = (items, sign, cls) => (items || []).map((t) => `<li class="flex gap-1"><span class="${cls}">${sign}</span><span>${esc(t)}</span></li>`).join('');
-            const crit = CRITERIA.map(([k, label]) => `<span class="px-1.5 py-0.5 rounded bg-slate-100">${esc(label)}: <b>${esc(ai.criteria?.[k] ?? 0)}</b>/2</span>`).join(' ');
+            const crit = criteriaFor(ai.entryType).map(([k, label]) => `<span class="px-1.5 py-0.5 rounded bg-slate-100">${esc(label)}: <b>${esc(ai.criteria?.[k] ?? 0)}</b>/2</span>`).join(' ');
             return `
                 <div class="bg-white p-3 rounded-lg border border-${tone}-200 space-y-2 text-xs">
                     <div class="flex justify-between items-center flex-wrap gap-2">
                         <div class="flex items-center gap-2">
                             <span class="text-2xl font-bold text-${tone}-600">${s}<span class="text-sm text-slate-400">/10</span></span>
-                            <span class="text-slate-500">AI evaluation</span>
+                            <span class="text-slate-500">AI evaluation${ai.entryType ? ` · assessed as <b>${ai.entryType === 'analysis' ? 'Analysis' : 'Forecast'}</b>` : ''}</span>
                         </div>
                         <span class="font-semibold px-2 py-0.5 rounded-full ${ai.counted ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'}">${ai.counted ? `+${esc(ai.points)} pts` : 'Not counted (daily cap)'}</span>
                     </div>
@@ -510,55 +604,224 @@
                 </div>`;
         }
 
+        // ---------- timeline: collapsible topic groups -> collapsible entries ----------
+        // Open/closed state is remembered across live updates (Firestore pushes re-render the list).
+        const TOPICS = Object.keys(callOptions);
+        const PAGE_SIZE = 10;
+        const openTopics = new Set();
+        const openEntries = new Set();
+        const shownPerTopic = {};
+        let autoOpenPending = false;
+        const autoOpened = new Set();    // topic groups opened by a filter/search (not by the user)
+        const MAX_FEATURED = 5;
+        let highlightId = null;          // entry opened via a permalink, briefly outlined
+        let pendingLinkId = (location.hash.match(/^#entry-([A-Za-z0-9_-]+)$/) || [])[1] || null;
+
+        // Opens and scrolls to #entry-<id> once that entry has loaded (clears filters so it is visible).
+        function openPermalink() {
+            if (!pendingLinkId) return;
+            const entry = entries.find((e) => e.id === pendingLinkId);
+            if (!entry) return;
+            pendingLinkId = null;
+            filterForecaster.value = 'All'; filterCategory.value = 'All'; $('filterStatus').value = 'All'; $('filterText').value = '';
+            openTopics.add(entry.category);
+            openEntries.add(entry.id);
+            const list = entries.filter((e) => e.category === entry.category)
+                .sort((a, b) => (new Date(b.date) - new Date(a.date)) || (b.createdAtMs - a.createdAtMs));
+            const pos = list.findIndex((e) => e.id === entry.id);
+            if (pos >= (shownPerTopic[entry.category] || PAGE_SIZE)) shownPerTopic[entry.category] = Math.ceil((pos + 1) / PAGE_SIZE) * PAGE_SIZE;
+            highlightId = entry.id;
+            renderEntries();
+            const el = document.getElementById(`entry-${entry.id}`);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setTimeout(() => { highlightId = null; renderEntries(); }, 4000);
+        }
+        window.addEventListener('hashchange', () => {
+            pendingLinkId = (location.hash.match(/^#entry-([A-Za-z0-9_-]+)$/) || [])[1] || null;
+            openPermalink();
+        });
+
+        const statusOf = (e) => e.validationStatus || 'Pending';
+        const statusChip = (s) => {
+            const cls = s === 'Correct' ? 'bg-emerald-100 text-emerald-700' : s === 'Incorrect' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600';
+            return `<span class="text-[11px] px-2 py-0.5 rounded-full font-medium ${cls}">${esc(s === 'Pending' ? 'Pending' : s)}</span>`;
+        };
+        const scoreChip = (e) => {
+            if (!store || store.mode === 'local') return '';
+            const ai = e.ai;
+            if (!ai || ai.status !== 'done') return `<span class="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-400" title="Awaiting AI score">⏳</span>`;
+            const s = Number(ai.score) || 0;
+            const cls = s >= 8 ? 'bg-emerald-100 text-emerald-700' : s >= 5 ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700';
+            return `<span class="text-[11px] px-2 py-0.5 rounded-full font-bold ${cls}" title="AI score">${s}/10</span>`;
+        };
+        const whoChip = (e) => `<span class="text-[11px] font-semibold px-1.5 py-0.5 rounded ${e.forecaster === 'Shreyas Koppole' ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'}">${esc(e.forecaster === 'Shreyas Koppole' ? 'Shreyas' : e.forecaster)}</span>`;
+        const fmtDay = (iso) => { const d = new Date(`${iso}T12:00:00Z`); return isNaN(d) ? esc(iso) : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); };
+        const snippet = (t, n = 110) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n) + '…' : s; };
+
+        function topicStats(list) {
+            const resolved = list.filter((e) => statusOf(e) !== 'Pending');
+            const correct = resolved.filter((e) => statusOf(e) === 'Correct').length;
+            const scored = list.filter((e) => e.ai && e.ai.status === 'done');
+            return {
+                count: list.length,
+                pending: list.length - resolved.length,
+                acc: resolved.length ? Math.round((correct / resolved.length) * 100) + '%' : '–',
+                avg: scored.length ? (scored.reduce((s, e) => s + (Number(e.ai.score) || 0), 0) / scored.length).toFixed(1) : '–',
+                latest: list[0] ? fmtDay(list[0].date) : '–'
+            };
+        }
+
+        function entryBody(entry) {
+            const edited = entry.updatedAtMs - entry.createdAtMs > 60000;
+            const loggedLabel = store && store.mode === 'cloud' ? 'Logged' : 'Saved on this device';
+            const actions = [
+                `<button data-act="link" data-id="${esc(entry.id)}" class="text-slate-500 hover:text-slate-800 font-semibold text-xs px-1" title="Copy a direct link to this entry">🔗 Copy link</button>`,
+                ownsEntry(entry) ? `<button data-act="feature" data-id="${esc(entry.id)}" class="text-amber-600 hover:text-amber-800 font-semibold text-xs px-1">${entry.featured ? '★ Unfeature' : '☆ Feature'}</button>` : '',
+                ownsEntry(entry) ? `<button data-act="edit" data-id="${esc(entry.id)}" class="text-indigo-600 hover:text-indigo-800 font-semibold text-xs px-1">Add outcome</button>` : '',
+                canDelete(entry) ? `<button data-act="delete" data-id="${esc(entry.id)}" class="text-red-500 hover:text-red-700 font-semibold text-xs px-1">Delete</button>` : ''
+            ].join('');
+            return `
+                <div class="px-4 pb-4 pt-1 space-y-3">
+                    <div class="flex justify-between items-center text-xs flex-wrap gap-2">
+                        <span class="text-slate-500">${esc(entry.forecaster)} · ${esc(entry.date)} (${esc(entry.lifeStage)}) · <b class="text-slate-700">${esc(entry.prediction)}</b></span>
+                        ${actions ? `<div class="space-x-1">${actions}</div>` : ''}
+                    </div>
+                    <p class="text-slate-600 text-sm whitespace-pre-wrap">${esc(entry.rationale)}</p>
+                    ${statusOf(entry) !== 'Pending' ? `
+                        <div class="pt-2 border-t border-slate-200 text-xs bg-white p-2.5 rounded-lg space-y-1">
+                            <p class="font-semibold text-slate-700">Actual Outcome: <span class="font-normal text-slate-600">${esc(entry.actualOutcome || 'N/A')}</span></p>
+                            <p class="font-semibold text-slate-700">Post-Mortem Analysis: <span class="font-normal text-slate-600 whitespace-pre-wrap">${esc(entry.postMortem || 'N/A')}</span></p>
+                        </div>` : ''}
+                    ${aiBlock(entry)}
+                    <p class="text-[11px] text-slate-400">${loggedLabel} ${fmtDateTime(entry.createdAtMs)}${edited ? ` · outcome updated ${fmtDateTime(entry.updatedAtMs)}` : ''}</p>
+                </div>`;
+        }
+
+        // anchor=true for the copy inside its topic group (the permalink target); the Showcase copy has no id.
+        function entryRow(entry, anchor = true) {
+            const open = openEntries.has(entry.id);
+            const pts = entry.ai && entry.ai.status === 'done' && entry.ai.counted ? `<span class="text-[11px] text-indigo-600 font-semibold">+${esc(entry.ai.points)}</span>` : '';
+            const ring = anchor && highlightId === entry.id ? ' ring-2 ring-indigo-400' : '';
+            return `
+                <details ${anchor ? `id="entry-${esc(entry.id)}"` : ''} class="rounded-lg border border-slate-200 bg-slate-50 scroll-mt-4${ring}" data-entry="${esc(entry.id)}" ${open ? 'open' : ''}>
+                    <summary class="list-none px-3 py-2 hover:bg-slate-100 rounded-lg">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-slate-400 text-xs w-3">${open ? '▾' : '▸'}</span>
+                            <span class="text-xs text-slate-500 w-24 shrink-0">${fmtDay(entry.date)}</span>
+                            ${entry.featured ? '<span title="Featured in Showcase">⭐</span>' : ''}
+                            ${whoChip(entry)}
+                            <span class="text-sm font-semibold text-slate-800">${esc(entry.prediction)}</span>
+                            <span class="ml-auto flex items-center gap-1.5">${statusChip(statusOf(entry))}${scoreChip(entry)}${pts}</span>
+                        </div>
+                        ${open ? '' : `<p class="text-xs text-slate-500 mt-1 ml-5 truncate">${esc(snippet(entry.rationale))}</p>`}
+                    </summary>
+                    ${open ? entryBody(entry) : ''}
+                </details>`;
+        }
+
+        // Segmented controls mirror the hidden <select>s, so all filter logic keeps using select.value.
+        const SEG_LABELS = { 'All Forecasters': 'All', 'Shreyas Koppole': 'Shreyas', 'All Outcomes': 'All', 'Pending outcome': 'Pending' };
+        function buildSegments() {
+            document.querySelectorAll('.seg[data-for]').forEach((seg) => {
+                const sel = $(seg.dataset.for);
+                seg.innerHTML = [...sel.options].map((o) => `<button type="button" data-val="${esc(o.value)}">${esc(SEG_LABELS[o.textContent] || o.textContent)}</button>`).join('');
+                seg.addEventListener('click', (e) => {
+                    const b = e.target.closest('button[data-val]');
+                    if (!b) return;
+                    sel.value = b.dataset.val;
+                    sel.dispatchEvent(new Event('change'));
+                });
+            });
+        }
+        function syncSegments() {
+            document.querySelectorAll('.seg[data-for]').forEach((seg) => {
+                const v = $(seg.dataset.for).value;
+                seg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.val === v)));
+            });
+        }
+
         function renderEntries() {
-            timeline.innerHTML = '';
+            syncSegments();
             const fF = filterForecaster.value;
             const fC = filterCategory.value;
-            const filtered = entries.filter((e) => (fF === 'All' || e.forecaster === fF) && (fC === 'All' || e.category === fC));
+            const fS = $('filterStatus').value;
+            const q = $('filterText').value.trim().toLowerCase();
+            const filtered = entries.filter((e) =>
+                (fF === 'All' || e.forecaster === fF) &&
+                (fC === 'All' || e.category === fC) &&
+                (fS === 'All' || statusOf(e) === fS) &&
+                (!q || [e.rationale, e.prediction, e.actualOutcome, e.postMortem, e.category].some((t) => String(t || '').toLowerCase().includes(q))))
+                .sort((a, b) => (new Date(b.date) - new Date(a.date)) || (b.createdAtMs - a.createdAtMs));
+
+            // Filters/search open the matching groups; when they're cleared, the groups they opened close again
+            // (groups the user opened by hand stay open).
+            if (autoOpenPending) {
+                autoOpened.forEach((t) => openTopics.delete(t));
+                autoOpened.clear();
+                if (q || fC !== 'All' || fS !== 'All') {
+                    filtered.forEach((e) => { if (!openTopics.has(e.category)) { openTopics.add(e.category); autoOpened.add(e.category); } });
+                }
+                autoOpenPending = false;
+            }
+            timeline.innerHTML = '';
+
+            // Showcase: author-picked best work, always at the top (respects only the writer filter).
+            const featured = entries.filter((e) => e.featured && (fF === 'All' || e.forecaster === fF))
+                .sort((a, b) => (new Date(b.date) - new Date(a.date)) || (b.createdAtMs - a.createdAtMs));
+            if (featured.length || canEdit()) {
+                const box = document.createElement('div');
+                box.className = 'rounded-xl border border-amber-200 bg-amber-50/60 p-3 space-y-2';
+                box.innerHTML = `
+                    <div class="flex items-center justify-between flex-wrap gap-2 px-1">
+                        <span class="font-bold text-slate-900">⭐ Showcase <span class="font-normal text-xs text-slate-500">best work, chosen by each author (max ${MAX_FEATURED} each)</span></span>
+                    </div>
+                    ${featured.length ? featured.map((e) => entryRow(e, false)).join('')
+                        : `<p class="text-xs text-slate-500 px-1">Nothing featured yet. Open one of your entries and click <b>☆ Feature</b> to show it here.</p>`}`;
+                timeline.appendChild(box);
+            }
+
+            $('resultCount').textContent = filtered.length === entries.length
+                ? `${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}`
+                : `Showing ${filtered.length} of ${entries.length} entries`;
 
             if (filtered.length === 0) {
+                emptyState.textContent = entries.length ? 'No entries match these filters.' : 'No entries logged yet. Add your first prediction or global markets note!';
                 timeline.appendChild(emptyState);
                 emptyState.style.display = 'block';
             } else {
-                emptyState.style.display = 'none';
-                filtered.slice().sort((a, b) => (new Date(b.date) - new Date(a.date)) || (b.createdAtMs - a.createdAtMs)).forEach((entry) => {
-                    let badgeColor = 'bg-slate-100 text-slate-600';
-                    if (entry.validationStatus === 'Correct') badgeColor = 'bg-emerald-100 text-emerald-700';
-                    if (entry.validationStatus === 'Incorrect') badgeColor = 'bg-rose-100 text-rose-700';
-                    const edited = entry.updatedAtMs - entry.createdAtMs > 60000;
-                    const loggedLabel = store && store.mode === 'cloud' ? 'Logged' : 'Saved on this device';
-                    const actions = [
-                        ownsEntry(entry) ? `<button data-act="edit" data-id="${esc(entry.id)}" class="text-indigo-600 hover:text-indigo-800 font-semibold text-xs px-1">Add outcome</button>` : '',
-                        canDelete(entry) ? `<button data-act="delete" data-id="${esc(entry.id)}" class="text-red-500 hover:text-red-700 font-semibold text-xs px-1">Delete</button>` : ''
-                    ].join('');
-
-                    const card = document.createElement('div');
-                    card.className = 'p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-3';
-                    card.innerHTML = `
-                        <div class="flex justify-between items-center text-xs flex-wrap gap-2">
-                            <span class="font-semibold px-2 py-0.5 rounded ${entry.forecaster === 'Shreyas Koppole' ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'}">${esc(entry.forecaster)}</span>
-                            <div class="flex items-center space-x-2">
-                                <span class="text-slate-500">${esc(entry.date)} (${esc(entry.lifeStage)})</span>
-                                ${actions ? `<div class="space-x-1">${actions}</div>` : ''}
+                const topics = [...TOPICS, ...new Set(filtered.map((e) => e.category).filter((c) => !TOPICS.includes(c)))];
+                topics.forEach((topic) => {
+                    const list = filtered.filter((e) => e.category === topic);
+                    if (!list.length) return;
+                    const st = topicStats(list);
+                    const open = openTopics.has(topic);
+                    const limit = shownPerTopic[topic] || PAGE_SIZE;
+                    const more = list.length - limit;
+                    const group = document.createElement('details');
+                    group.className = 'rounded-xl border border-slate-200 bg-white';
+                    group.dataset.topic = topic;
+                    group.open = open;
+                    group.innerHTML = `
+                        <summary class="list-none px-4 py-3 hover:bg-slate-50 rounded-xl">
+                            <div class="flex items-center justify-between flex-wrap gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-slate-400">${open ? '▾' : '▸'}</span>
+                                    <span class="font-bold text-slate-900">${esc(topic)}</span>
+                                    <span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">${st.count}</span>
+                                </div>
+                                <div class="flex gap-3 text-[11px] text-slate-500">
+                                    <span>Pending outcome: <b class="${st.pending ? 'text-amber-600' : 'text-slate-700'}">${st.pending}</b></span>
+                                    <span>Accuracy: <b class="text-slate-700">${st.acc}</b></span>
+                                    <span>Avg AI: <b class="text-slate-700">${st.avg}</b></span>
+                                    <span>Latest: <b class="text-slate-700">${st.latest}</b></span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="flex items-center justify-between flex-wrap gap-2">
-                            <h3 class="font-bold text-slate-800 text-sm">${esc(entry.prediction)}</h3>
-                            <div class="flex items-center space-x-2">
-                                <span class="text-xs px-2 py-0.5 rounded-full font-medium ${badgeColor}">Status: ${esc(entry.validationStatus || 'Pending')}</span>
-                                <span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">${esc(entry.category)}</span>
-                            </div>
-                        </div>
-                        <p class="text-slate-600 text-sm whitespace-pre-wrap">${esc(entry.rationale)}</p>
-                        ${entry.validationStatus && entry.validationStatus !== 'Pending' ? `
-                            <div class="pt-2 border-t border-slate-200 text-xs bg-white p-2.5 rounded-lg space-y-1">
-                                <p class="font-semibold text-slate-700">Actual Outcome: <span class="font-normal text-slate-600">${esc(entry.actualOutcome || 'N/A')}</span></p>
-                                <p class="font-semibold text-slate-700">Post-Mortem Analysis: <span class="font-normal text-slate-600 whitespace-pre-wrap">${esc(entry.postMortem || 'N/A')}</span></p>
-                            </div>` : ''}
-                        ${aiBlock(entry)}
-                        <p class="text-[11px] text-slate-400">${loggedLabel} ${fmtDateTime(entry.createdAtMs)}${edited ? ` · outcome updated ${fmtDateTime(entry.updatedAtMs)}` : ''}</p>
-                    `;
-                    timeline.appendChild(card);
+                        </summary>
+                        ${open ? `<div class="px-3 pb-3 space-y-2">
+                            ${list.slice(0, limit).map(entryRow).join('')}
+                            ${more > 0 ? `<button type="button" data-act="more" data-topic="${esc(topic)}" class="w-full text-xs text-indigo-600 hover:text-indigo-800 font-semibold py-1.5">Show ${Math.min(more, PAGE_SIZE)} more of ${more} older</button>` : ''}
+                        </div>` : ''}`;
+                    timeline.appendChild(group);
                 });
             }
 
@@ -576,16 +839,37 @@
                 const pretty = new Date(`${next}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
                 const badge = $('mpcBadge');
                 badge.textContent = `🏦 Next BoE rate decision: ${pretty} (${days === 0 ? 'today' : `in ${days} day${days === 1 ? '' : 's'}`})${days <= 14 ? ', time to log your call!' : ''}`;
-                badge.className = 'mt-2 text-xs font-semibold ' + (days <= 14 ? 'text-amber-300' : 'text-slate-300');
+                badge.className = 'mt-1 text-xs font-semibold ' + (days <= 14 ? 'text-amber-600' : 'text-slate-500');
             } catch (e) { /* optional feature */ }
         }
 
         // ---------- events ----------
 
         $('levelsText').textContent = LEVELS.map(([p, t]) => `${t} (${p}+)`).join(' → ');
+        buildSegments();
         categorySelect.addEventListener('change', () => updateCallDropdown());
-        filterForecaster.addEventListener('change', renderEntries);
-        filterCategory.addEventListener('change', renderEntries);
+        const applyFilters = () => { autoOpenPending = true; renderEntries(); };
+        filterForecaster.addEventListener('change', applyFilters);
+        filterCategory.addEventListener('change', applyFilters);
+        $('filterStatus').addEventListener('change', applyFilters);
+        let searchTimer;
+        $('filterText').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(applyFilters, 250); });
+
+        // Expanding/collapsing a topic or entry: remember it, then re-render (content is built only when open).
+        // 'toggle' doesn't bubble, so listen in the capture phase.
+        timeline.addEventListener('toggle', (e) => {
+            const el = e.target;
+            if (!(el instanceof HTMLDetailsElement)) return;
+            const set = el.dataset.topic !== undefined ? openTopics : el.dataset.entry !== undefined ? openEntries : null;
+            const key = el.dataset.topic !== undefined ? el.dataset.topic : el.dataset.entry;
+            if (!set) return;
+            if (el.open === set.has(key)) return; // already in sync (e.g. element just re-created open)
+            if (el.open) set.add(key); else set.delete(key);
+            renderEntries();
+        }, true);
+
+        $('expandAllBtn').addEventListener('click', () => { TOPICS.forEach((t) => openTopics.add(t)); entries.forEach((e) => openTopics.add(e.category)); renderEntries(); });
+        $('collapseAllBtn').addEventListener('click', () => { openTopics.clear(); openEntries.clear(); autoOpened.clear(); renderEntries(); });
         cancelEditBtn.addEventListener('click', resetForm);
         $('rationale').addEventListener('input', updateCount);
 
@@ -627,6 +911,31 @@
 
         timeline.addEventListener('click', async (e) => {
             const btn = e.target.closest('button[data-act]');
+            if (btn && btn.dataset.act === 'more') {
+                const t = btn.dataset.topic;
+                shownPerTopic[t] = (shownPerTopic[t] || PAGE_SIZE) + PAGE_SIZE;
+                renderEntries();
+                return;
+            }
+            if (btn && btn.dataset.act === 'link') {
+                const url = `${location.origin}${location.pathname}#entry-${btn.dataset.id}`;
+                try { await navigator.clipboard.writeText(url); btn.textContent = '✔ Link copied'; }
+                catch { window.prompt('Copy this link:', url); }
+                return;
+            }
+            if (btn && btn.dataset.act === 'feature') {
+                const entry = entries.find((x) => x.id === btn.dataset.id);
+                if (!entry || !canEdit() || !ownsEntry(entry)) return;
+                const want = !entry.featured;
+                if (want && entries.filter((x) => x.featured && x.forecaster === entry.forecaster).length >= MAX_FEATURED) {
+                    showError(`You can feature up to ${MAX_FEATURED} entries. Unfeature one first.`);
+                    return;
+                }
+                clearError();
+                try { await store.setFeatured(entry.id, want); }
+                catch (err) { console.error(err); showError('Could not update Showcase: ' + (err.code === 'permission-denied' ? 'not allowed (are the latest rules published?).' : err.message)); }
+                return;
+            }
             if (!btn || !canEdit()) return;
             const id = btn.dataset.id;
             const entry = entries.find((x) => x.id === id);
@@ -698,7 +1007,7 @@
                 applyPermissions();
                 return;
             }
-            const onData = (list) => { entries = list; renderEntries(); };
+            const onData = (list) => { entries = list; renderEntries(); openPermalink(); };
             if (store.mode === 'cloud') {
                 store.onAuth((user) => { currentUser = user; resetForm(); applyPermissions(); renderEntries(); });
                 store.subscribe(onData, (err) => { console.error(err); showError('Could not read the journal: ' + (err.code || err.message)); });
